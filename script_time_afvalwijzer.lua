@@ -33,6 +33,10 @@ local afvaltype_cfg = {
    ["Klein chemisch afval"]               ={hour=19,min=22,daysbefore=1,text="Blauwe Bak"},
    ["Papier en karton"]                   ={hour=17,min=00,daysbefore=0,text="Blauwe Container met Oud papier"}}
 --==== end of config ======================================================================================================
+-- General conversion tables
+local MON_e_n={January="januari", February="februari", March="maart", April="april", May="mei", June="juni", July="juli", August="augustus", September="september", October="oktober", November="november", December="december"}
+local WDAY_e_n={Sunday="zondag", Monday="maandag", Thusday="dinsdag", Wednesday="woensdag", Thursday="donderdag", Friday="vrijdag", Saturday="zaterdag"}
+local MON={januari=1,februari=2,maart=3,april=4,mei=5,juni=6,juli=7,augustus=8,september=9,oktober=10,november=11,december=12}
 
 -- round
 function Round(num, idp)
@@ -40,7 +44,7 @@ function Round(num, idp)
 end
 -- debug print
 function dprint(text)
-   if debug then print(" Afval debug:"..text) end
+   if debug then print("@AFW:"..text) end
 end
 -- run curl and capture output
 function os.capture(cmd, rep)  -- execute command to get site
@@ -58,8 +62,63 @@ function os.capture(cmd, rep)  -- execute command to get site
    end
   return s
 end
+-- get days between today and provided date
+function getdaysdiff(i_afvaltype_date)
+   local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
+   -- Calculate the daysdifference between found date and Now and send notification is required
+   local afvalyear =timenow.year
+   local afvalday  =timenow.day
+   local afvalmonth=timenow.month
+   local s_afvalmonth="vandaag"
+   -- check if date in variable i_afvaltype_date contains "vandaag" in stead of a valid date -> use today's date
+   if i_afvaltype_date == "vandaag" then
+      -- use the set todays info
+   else
+      afvalday,s_afvalmonth=i_afvaltype_date:match("%a+ (%d+) (%a+)")
+      if (afvalday == nil or s_afvalmonth == nil) then
+         print ('! afvalWijzer: No valid date found in i_afvaltype_date: ' .. i_afvaltype_date)
+         return
+      end
+      afvalmonth = MON[s_afvalmonth]
+   end
+   dprint("...gerd-> afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
+   --
+   local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
+   -- return number of days diff
+   return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+end
+
+function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
+   --
+   dprint("...Noti-> i_daysdifference:"..tostring(i_daysdifference).."  afvaltype_cfg[s_afvaltype].daysbefore:"..tostring(afvaltype_cfg[s_afvaltype].daysbefore).."   afvaltype_cfg[s_afvaltype].text:"..tostring(afvaltype_cfg[s_afvaltype].text))
+   if afvaltype_cfg[s_afvaltype] ~= nil
+   and timenow.hour==afvaltype_cfg[s_afvaltype].hour
+   and timenow.min==afvaltype_cfg[s_afvaltype].min
+   and i_daysdifference == afvaltype_cfg[s_afvaltype].daysbefore then
+      print ('afvalWijzer Notification send for ' .. s_afvaltype)
+      dag = ""
+      if afvaltype_cfg[s_afvaltype].daysbefore == 0 then
+         dag = "vandaag"
+      elseif afvaltype_cfg[s_afvaltype].daysbefore == 1 then
+         dag = "morgen"
+      else
+         dag = "over " .. tostring(afvaltype_cfg[s_afvaltype].daysbefore) .. " dagen"
+      end
+      notificationtitle = notificationtitle:gsub('@DAG@',dag)
+      notificationtitle = notificationtitle:gsub('@AFVALTYPE@',s_afvaltype)
+      notificationtitle = notificationtitle:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
+      notificationtitle = notificationtitle:gsub('@AFVALDATE@',s_afvaltype_date)
+      notificationtext = notificationtext:gsub('@DAG@',dag)
+      notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
+      notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
+      notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
+      commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+   end
+end
+
 -- Do the actual update retrieving data from the website and processing it
 function Perform_Update()
+
    print('afvalWijzer module start check')
 
    -- get data from afvalWijzer
@@ -73,72 +132,55 @@ function Perform_Update()
    -- strip html stuff and format for domoticz
    tmp=tmp:gsub('%c','')
    --~ <p class="firstDate">donderdag 22 maart</p>
+   --~ <p class="firstDate">vandaag</p>
    --~ <p class="firstWasteType">Groente, Fruit en Tuinafval</p>
    -- get the data for these fields
-   web_afvaltype_date,web_afvaltype=tmp:match('.-<p class="firstDate">(.-)</p>.-<p class="firstWasteType">(.-)</p>')
-   dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaltype_date:"..tostring(web_afvaltype_date))
-   if (web_afvaltype_date == nil or web_afvaltype == nil) then
+   web_afvaldate,web_afvaltype=tmp:match('.-<p class="firstDate">(.-)</p>.-<p class="firstWasteType">(.-)</p>')
+   dprint('=== web update ================================')
+   dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
+   if (web_afvaldate == nil or web_afvaltype == nil) then
       print ('! afvalWijzer: No valid data found in returned webdata.  skipping the rest of the logic.')
       return
    end
-
-   local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
-   local MON={januari=1,februari=2,maart=3,april=4,mei=5,juni=6,juli=7,augustus=8,september=9,oktober=10,november=11,december=12}
-   -- Calculate the daysdifference between found date and Now and send notification is required
-   local afvalyear =timenow.year
-   local afvalday  =timenow.day
-   local afvalmonth=timenow.month
-   local s_afvalmonth="vandaag"
-   -- check if date in variable web_afvaltype_date contains "vandaag" in stead of a valid date -> use today's date
-   if web_afvaltype_date == "vandaag" then
-      -- use the set todays info
-   else
-      afvalday,s_afvalmonth=web_afvaltype_date:match("%a+ (%d+) (%a+)")
-      if (afvalday == nil or s_afvalmonth == nil) then
-         print ('! afvalWijzer: No valid date found in web_afvaltype_date: ' .. web_afvaltype_date)
-         return
-      end
-      afvalmonth = MON[s_afvalmonth]
+   -- set the date back to a real date to allow for future processing
+   if web_afvaldate == "vandaag" then
+      web_afvaldate = WDAY_e_n[os.date("%A")].." "..os.date("%d").." "..MON_e_n[os.date("%B")]
+      dprint('Change web_afvaldate "vandaag" to :' .. web_afvaldate)
    end
-   dprint("afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
-   --
-   local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
-   local daysdifference = Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+   -- process new information from the web
+   daysdifference = getdaysdiff(web_afvaldate)
    if (afvaltype_cfg[web_afvaltype] == nil) then
       print ('! afvalWijzer: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
    end
-   --
-   if afvaltype_cfg[web_afvaltype] ~= nil
-   and timenow.hour==afvaltype_cfg[web_afvaltype].hour
-   and timenow.min==afvaltype_cfg[web_afvaltype].min
-   and daysdifference == afvaltype_cfg[web_afvaltype].daysbefore then
-      dprint("-> daysdifference:"..tostring(daysdifference).."  afvaltype_cfg[web_afvaltype].daysbefore:"..tostring(afvaltype_cfg[web_afvaltype].daysbefore).."   afvaltype_cfg[web_afvaltype].text:"..tostring(afvaltype_cfg[web_afvaltype].text))
-      print ('afvalWijzer Notification send for ' .. web_afvaltype)
-      dag = ""
-      if afvaltype_cfg[web_afvaltype].daysbefore == 0 then
-         dag = "vandaag"
-      elseif afvaltype_cfg[web_afvaltype].daysbefore == 1 then
-         dag = "morgen"
-      else
-         dag = "over " .. tostring(afvaltype_cfg[web_afvaltype].daysbefore) .. " dagen"
-      end
-      notificationtitle = notificationtitle:gsub('@DAG@',dag)
-      notificationtitle = notificationtitle:gsub('@AFVALTYPE@',web_afvaltype)
-      notificationtitle = notificationtitle:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[web_afvaltype].text))
-      notificationtitle = notificationtitle:gsub('@AFVALDATE@',web_afvaltype_date)
-      notificationtext = notificationtext:gsub('@DAG@',dag)
-      notificationtext = notificationtext:gsub('@AFVALTYPE@',web_afvaltype)
-      notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[web_afvaltype].text))
-      notificationtext = notificationtext:gsub('@AFVALDATE@',web_afvaltype_date)
-      commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-   end
+   notification(web_afvaltype,web_afvaldate,daysdifference)  -- check notification for new found info
+
+   dprint('=== device: ' .. myAfvalDevice .. ' check and update ================================')
    -- update device when text changed
-   local txt = web_afvaltype_date .. " " .. web_afvaltype
-   if (otherdevices[myAfvalDevice] ~= txt) then
-      commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
-      print ('afvalWijzer: Update device: ' .. txt)
+   local txt = ""
+   curdevtext = otherdevices[myAfvalDevice]
+   -- process each record in the device text first to check if still in future and notification needed
+   for dev_date, dev_afvaltype in string.gmatch(curdevtext..'\r\n', '(.-)=(.-)\r\n+') do
+      dprint("=> process:"..dev_date.."="..dev_afvaltype)
+      daysdiffdev = getdaysdiff(dev_date)
+      if daysdiffdev < 0  then
+         dprint(".> skip old -> dev_afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
+      elseif web_afvaltype == dev_afvaltype then
+         dprint(".> skip same as Web -> dev_afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
+      else
+         dprint(".> Add to dev_-> afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
+         notification(dev_afvaltype,dev_date,daysdiffdev)  -- check notification for new found info
+         txt = txt..dev_date .. "=" .. dev_afvaltype .. "\r\n"
+      end
+   end
+   dprint("=> Add Web to dev_-> afvaltype:"..web_afvaltype.." - "..web_afvaldate.."   daysdiffdev:"..daysdifference)
+   txt = txt..web_afvaldate .. "=" .. web_afvaltype
+
+   -- always update the domoticz device so one can see it is updating and when it was ran last.
+   commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
+   if (curdevtext ~= txt) then
+      print ('afvalWijzer: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
    else
-      print ('afvalWijzer: Done: '  .. txt)
+      print ('afvalWijzer: No update.')
    end
 end
 
@@ -147,6 +189,7 @@ end
 -- Start of logic ========================================================================
 commandArray = {}
 timenow = os.date("*t")
+
 -- check for notification times and run update only when we are at one of these defined times
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
@@ -158,6 +201,7 @@ for avtype,get in pairs(afvaltype_cfg) do
 end
 -- get information from website, update device and send notification when required
 if needupdate then
+   debug = true     -- activate debug here to only log the update process in detail
    Perform_Update()
 else
    dprint("Scheduled time(s) not reached yet, so nothing to do!")
