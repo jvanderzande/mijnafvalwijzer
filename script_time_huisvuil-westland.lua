@@ -44,7 +44,7 @@ function os.capture(cmd, rep)  -- execute command to get site
 end
 -- get information from website, update device and send notofication when required
 function getdata()
-   print('afvalWijzer module start')
+   print('WestlandAfval --> module start')
 
    -- get data from afvalWijzer
    local commando = "curl 'https://bijmijindebuurt.gemeentewestland.nl/huisvuilkalender/Huisvuilkalender/get-huisvuilkalender-ajax' -H 'Origin: https://bijmijindebuurt.gemeentewestland.nl' -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Referer: https://bijmijindebuurt.gemeentewestland.nl/huisvuilkalender?dummy=0.9778403611955824' -H 'X-Requested-With: XMLHttpRequest' -H 'Connection: keep-alive' --data 'postcode=" .. Postcode .. "&query=' --compressed"
@@ -54,10 +54,10 @@ function getdata()
    dprint("Curl URL:"..commando)
    dprint("Curl returned Webdata:"..Webdata)
    if (Webdata == "") then
-      print("! afvalWijzer: Error Webdata is empty.")
+      print("! WestlandAfval -->: Error Webdata is empty.")
       return
    elseif (Webdata == "" or string.find(Webdata,'{"error":true}') ~= nil) then
-      print("! afvalWijzer: Error returned ... check postcode   Webdata:" .. Webdata )
+      print("! WestlandAfval -->: Error returned ... check postcode   Webdata:" .. Webdata )
       return
    end
    -- Read from the data table, and extract duration and distance in value. Divide distance by 1000 and duration_in_traffic by 60
@@ -67,16 +67,14 @@ function getdata()
    local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
    local MON={jan=1,feb=2,maa=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
    -- loop through returned result
-   while (string.find(Webdata, "soort-") ~= nil) do
-      -- get next plan
-      web_afvaltype,web_afvaltype_date=Webdata:match('.-soort.(.-)%sclearfix.-text dag\\">(.-)<\\/span')
+   for web_afvaltype,web_afvaltype_date in string.gmatch(Webdata, '.-soort.(.-)%sclearfix.-text dag\\">(.-)<\\/span') do
       if (web_afvaltype == nil) then
          dprint("web_afvaltype:nil")
          break
       end
       if (web_afvaltype_date == nil) then
-         print ('! afvalWijzer: "text dag" not found in Webdata for ' .. web_afvaltype)
-         print ('! afvalWijzer: Webdata: ' .. Webdata)
+         print ('! WestlandAfval -->: "text dag" not found in Webdata for ' .. web_afvaltype)
+         print ('! WestlandAfval -->: Webdata: ' .. Webdata)
          break
       end
       i=i+1
@@ -84,12 +82,12 @@ function getdata()
       logtxt = logtxt .. web_afvaltype .. " - " .. web_afvaltype_date.. " ; "
       planning = planning .. web_afvaltype .. "-" .. web_afvaltype_date.. "\r\n"
       -- Calculate the daysdifference between found date and Now and send notification is required
-      local afvalday,s_afvalmonth,afvalyear=web_afvaltype_date:match("%a+ (%d+) (%a+) (%d+)")
+      local afvalday,s_afvalmonth,afvalyear=web_afvaltype_date:match("%a- (%d+) (%a+) (%d+)")
       local afvalmonth = MON[s_afvalmonth:sub(1,3)]
       local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
       local daysdifference = Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
       if (afvaltype_cfg[web_afvaltype] == nil) then
-         print ('! afvalWijzer: Afvalsoort not defined in afvaltype_cfg for found Afvalsoort Webdata: ' .. web_afvaltype)
+         print ('! WestlandAfval -->: Afvalsoort not defined in afvaltype_cfg for found Afvalsoort Webdata: ' .. web_afvaltype)
       end
       dprint("daysdifference:"..tostring(daysdifference).."   afvaltype_cfg[web_afvaltype].daysbefore:"..tostring(afvaltype_cfg[web_afvaltype].daysbefore))
       dag = ""
@@ -106,7 +104,7 @@ function getdata()
          dagb = afvaltype_cfg[web_afvaltype.."2"].daysbefore
       end
       if dagb ~= nil then
-         print ('afvalWijzer Notification send for ' .. web_afvaltype)
+         print ('WestlandAfval --> Notification send for ' .. web_afvaltype)
 
          if dagb == 0 then
             dag = "vandaag"
@@ -115,21 +113,19 @@ function getdata()
          else
             dag = "over " .. dagb .. " dagen"
          end
-         local notificationtext = "afvalWijzer: " .. dag .. " wordt ".. web_afvaltype .. " afval opgehaald!"
-         commandArray['SendNotification']='Afvalwijzer#'..notificationtext
+         local notificationtext = "WestlandAfval -->: " .. dag .. " wordt ".. web_afvaltype .. " afval opgehaald!"
+         commandArray['SendNotification']='WestlandAfval -->#'..notificationtext
       end
-      -- strip Webdata and get date from Webdata
-      Webdata = Webdata:sub(string.find(Webdata, "<\\/li>")+5)
    end
    if (i == 0) then
-      print ('! afvalWijzer: No valid information found in Webdata:' .. tostring(Webdata) )
+      print ('! WestlandAfval -->: No valid information found in Webdata:' .. tostring(Webdata) )
    end
    -- update device when text changed
    dprint("=======================================================")
    dprint("== planning:"..planning)
 
    commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. planning
-   print ('afvalWijzer update: ' .. logtxt)
+   print ('WestlandAfval --> update: ' .. logtxt)
 end
 
 -- End Functions =========================================================================
