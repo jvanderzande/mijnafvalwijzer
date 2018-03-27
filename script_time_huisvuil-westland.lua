@@ -12,8 +12,8 @@ local Postcode = "229???"                    -- Specif your postcode
  -- daysbefore ==> 0 means that the notification is send the day of the planned garbage collection
  -- daysbefore ==> X means that the notification is send X day(s) before the day of the planned garbage collection
 local afvaltype_cfg = {
-   ["grijs"] ={hour=21,min=0,daysbefore=1},	 -- get notification at 21:00 the day before for grijs
-   ["groen"] ={hour=21,min=0,daysbefore=1},	 -- get notification at 21:00 the day before for groen
+   ["grijs"] ={hour=21,min=0,daysbefore=1},	-- get notification at 21:00 the day before for grijs
+   ["groen"] ={hour=21,min=0,daysbefore=1},	-- get notification at 21:00 the day before for groen
    ["papier"]={hour=12,min=0,daysbefore=0}}  -- get notification at 12:00 the same day for papier
 local debug = false                          -- get debug info in domoticz console/log
 --==== end of config =================================================================
@@ -120,16 +120,16 @@ function getdata()
       end
       -- strip Webdata and get date from Webdata
       Webdata = Webdata:sub(string.find(Webdata, "<\\/li>")+5)
-      if (i == 0) then
-         print ('! afvalWijzer: No valid information found in Webdata:' .. tostring(Webdata) )
-      end
-      -- update device when text changed
-      dprint("=======================================================")
-      dprint("== planning:"..planning)
-
-      commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. planning
-      print ('afvalWijzer update: ' .. logtxt)
    end
+   if (i == 0) then
+      print ('! afvalWijzer: No valid information found in Webdata:' .. tostring(Webdata) )
+   end
+   -- update device when text changed
+   dprint("=======================================================")
+   dprint("== planning:"..planning)
+
+   commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. planning
+   print ('afvalWijzer update: ' .. logtxt)
 end
 
 -- End Functions =========================================================================
