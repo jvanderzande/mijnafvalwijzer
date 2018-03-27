@@ -31,11 +31,11 @@ local afvaltype_cfg = {
    ["Groente, Fruit en Tuinafval"]        ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinfval"},
    ["Plastic, Metalen en Drankkartons"]   ={hour=19,min=22,daysbefore=1,text="Oranje Container met Plastic en Metalen"},
    ["Klein chemisch afval"]               ={hour=19,min=22,daysbefore=1,text="Blauwe Bak"},
-   ["Papier en karton"]                   ={hour=17,min=00,daysbefore=0,text="Blauwe Container met Oud papier"}}
+   ["Papier en karton"]                   ={hour=12,min=00,daysbefore=0,text="Blauwe Container met Oud papier"}}
 --==== end of config ======================================================================================================
 -- General conversion tables
 local MON_e_n={January="januari", February="februari", March="maart", April="april", May="mei", June="juni", July="juli", August="augustus", September="september", October="oktober", November="november", December="december"}
-local WDAY_e_n={Sunday="zondag", Monday="maandag", Thusday="dinsdag", Wednesday="woensdag", Thursday="donderdag", Friday="vrijdag", Saturday="zaterdag"}
+local WDAY_e_n={Sunday="zondag", Monday="maandag", Tuesday="dinsdag", Wednesday="woensdag", Thursday="donderdag", Friday="vrijdag", Saturday="zaterdag"}
 local MON={januari=1,februari=2,maart=3,april=4,mei=5,juni=6,juli=7,augustus=8,september=9,oktober=10,november=11,december=12}
 
 -- round
@@ -90,7 +90,7 @@ end
 
 function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
    --
-   dprint("...Noti-> i_daysdifference:"..tostring(i_daysdifference).."  afvaltype_cfg[s_afvaltype].daysbefore:"..tostring(afvaltype_cfg[s_afvaltype].daysbefore).."   afvaltype_cfg[s_afvaltype].text:"..tostring(afvaltype_cfg[s_afvaltype].text))
+   dprint("...Noti-> i_daysdifference:"..tostring(i_daysdifference).."  afvaltype_cfg[s_afvaltype].daysbefore:"..tostring(afvaltype_cfg[s_afvaltype].daysbefore).."  hour:"..tostring(afvaltype_cfg[s_afvaltype].hour).."  min:"..tostring(afvaltype_cfg[s_afvaltype].min))
    if afvaltype_cfg[s_afvaltype] ~= nil
    and timenow.hour==afvaltype_cfg[s_afvaltype].hour
    and timenow.min==afvaltype_cfg[s_afvaltype].min
@@ -118,12 +118,10 @@ end
 
 -- Do the actual update retrieving data from the website and processing it
 function Perform_Update()
-
    print('afvalWijzer module start check')
-
+   dprint('=== web update ================================')
    -- get data from afvalWijzer
    local commando = "curl --max-time 5 -s 'http://www.mijnafvalwijzer.nl/nl/"..Postcode.."/"..Huisnummer.."/'"
-   -- addded: grep -E '\<class=\"first(Date|WasteType)'
    local tmp = os.capture(commando, 5)
    if ( tmp == "" ) then
       print("afvalWijzer: Empty result from curl command")
@@ -136,7 +134,6 @@ function Perform_Update()
    --~ <p class="firstWasteType">Groente, Fruit en Tuinafval</p>
    -- get the data for these fields
    web_afvaldate,web_afvaltype=tmp:match('.-<p class="firstDate">(.-)</p>.-<p class="firstWasteType">(.-)</p>')
-   dprint('=== web update ================================')
    dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
    if (web_afvaldate == nil or web_afvaltype == nil) then
       print ('! afvalWijzer: No valid data found in returned webdata.  skipping the rest of the logic.')
@@ -144,6 +141,12 @@ function Perform_Update()
    end
    -- set the date back to a real date to allow for future processing
    if web_afvaldate == "vandaag" then
+      if WDAY_e_n[os.date("%A")] == nil then
+         dprint(" Error: Not in table WDAY_e_n[]:"..os.date("%A"))
+      end
+      if MON_e_n[os.date("%B")] == nil then
+         dprint(" Error: Not in table MON_e_n[]:"..os.date("%A"))
+      end
       web_afvaldate = WDAY_e_n[os.date("%A")].." "..os.date("%d").." "..MON_e_n[os.date("%B")]
       dprint('Change web_afvaldate "vandaag" to :' .. web_afvaldate)
    end
@@ -154,33 +157,36 @@ function Perform_Update()
    end
    notification(web_afvaltype,web_afvaldate,daysdifference)  -- check notification for new found info
 
-   dprint('=== device: ' .. myAfvalDevice .. ' check and update ================================')
+   dprint('=== device: ' .. myAfvalDevice .. ' check and update ========')
    -- update device when text changed
    local txt = ""
    curdevtext = otherdevices[myAfvalDevice]
    -- process each record in the device text first to check if still in future and notification needed
    for dev_date, dev_afvaltype in string.gmatch(curdevtext..'\r\n', '(.-)=(.-)\r\n+') do
       dprint("=> process:"..dev_date.."="..dev_afvaltype)
-      daysdiffdev = getdaysdiff(dev_date)
-      if daysdiffdev < 0  then
-         dprint(".> skip old -> dev_afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
-      elseif web_afvaltype == dev_afvaltype then
-         dprint(".> skip same as Web -> dev_afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
+      if web_afvaltype == dev_afvaltype then
+         dprint(".> skip same as Web  -> dev_afvaltype:"..dev_date.."="..dev_afvaltype)
       else
-         dprint(".> Add to dev_-> afvaltype:"..dev_afvaltype.." - "..dev_date.."   daysdiffdev:"..daysdiffdev)
-         notification(dev_afvaltype,dev_date,daysdiffdev)  -- check notification for new found info
-         txt = txt..dev_date .. "=" .. dev_afvaltype .. "\r\n"
+         -- Get DaysDiff
+         daysdiffdev = getdaysdiff(dev_date)
+         if daysdiffdev < 0  then
+            dprint(".> skip old -> dev_afvaltype:"..dev_date.."="..dev_afvaltype.."   daysdiffdev:"..daysdiffdev)
+         else
+            dprint(".> Add back to TxtDev -> afvaltype:"..dev_date.."="..dev_afvaltype.."   daysdiffdev:"..daysdiffdev)
+            notification(dev_afvaltype,dev_date,daysdiffdev)  -- check notification for new found info
+            txt = txt..dev_date .. "=" .. dev_afvaltype .. "\r\n"
+         end
       end
    end
-   dprint("=> Add Web to dev_-> afvaltype:"..web_afvaltype.." - "..web_afvaldate.."   daysdiffdev:"..daysdifference)
+   dprint('=== Update TxtDevice in Domoticz =============')
+   dprint("=> Add Webinfo to TxtDev -> afvaltype:"..web_afvaltype.." - "..web_afvaldate)
    txt = txt..web_afvaldate .. "=" .. web_afvaltype
-
    -- always update the domoticz device so one can see it is updating and when it was ran last.
-   commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
    if (curdevtext ~= txt) then
+      commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
       print ('afvalWijzer: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
    else
-      print ('afvalWijzer: No update.')
+      print ('afvalWijzer: No updated text for TxtDevice.')
    end
 end
 
