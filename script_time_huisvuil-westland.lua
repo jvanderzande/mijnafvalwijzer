@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------------------------------
--- afvalWijzer module gemeente Westland
+-- WestlandAfval module gemeente Westland
 -----------------------------------------------------------------------------------------------------------------
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
@@ -17,14 +17,24 @@ local afvaltype_cfg = {
    ["papier"]={hour=12,min=0,daysbefore=0}}  -- get notification at 12:00 the same day for papier
 local debug = false                          -- get debug info in domoticz console/log
 --==== end of config =================================================================
+
 -- Functions =========================================================================
 -- round
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
 end
+-- daysdiff calculation
+function DaysDiff(sdate)
+   local MON={jan=1,feb=2,maa=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
+   local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
+   local afvalday,s_afvalmonth,afvalyear=sdate:match("%a- (%d+) (%a+) (%d+)")
+   local afvalmonth = MON[s_afvalmonth:sub(1,3)]
+   local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
+   return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+end
 -- debug print
 function dprint(text)
-   if debug then print(" Afval debug:"..text) end
+   if debug then print("@WAD:"..text) end
 end
 -- run curl and capture output
 function os.capture(cmd, rep)  -- execute command to get site
@@ -53,22 +63,35 @@ function getdata()
    local logtxt = ""
    dprint("Curl URL:"..commando)
    dprint("Curl returned Webdata:"..Webdata)
-   if (Webdata == "") then
+   if Webdata == "" then
       print("! WestlandAfval -->: Error Webdata is empty.")
       return
-   elseif (Webdata == "" or string.find(Webdata,'{"error":true}') ~= nil) then
+   elseif string.find(Webdata,'{"error":true}') ~= nil then
       print("! WestlandAfval -->: Error returned ... check postcode   Webdata:" .. Webdata )
       return
    end
    -- Read from the data table, and extract duration and distance in value. Divide distance by 1000 and duration_in_traffic by 60
    local web_afvaltype=""
    local web_afvaltype_date=""
+   local web_afvaltype_changed=""
    local i = 0
-   local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
-   local MON={jan=1,feb=2,maa=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
    -- loop through returned result
-   for web_afvaltype,web_afvaltype_date in string.gmatch(Webdata, '.-soort.(.-)%sclearfix.-text dag\\">(.-)<\\/span') do
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- voorbeeld normale melding
+-- <li class=\"soort-groen clearfix\">\r\n\t\t\t\t<span class=\"afvalicon\"><\/span>\r\n\t\t\t\t
+-- <span class=\"text dag\">Vrijdag 20 april 2018<\/span>\r\n\t\t\t\t\t\t\t\t\t
+-- <span class=\"text info\">In de even weken op vrijdag<\/span>\r\n\t\t\t\t\t\t\t<\/li>\r\n\t\t\t\t\t
+
+-- voorbeeld uitzonderings melding
+-- <li class=\"soort-grijs clearfix\">\r\n\t\t\t\t<span class=\"afvalicon\"><\/span>\r\n\t\t\t\t
+-- <span class=\"text dag uitzondering\">Vrijdag 27 april 2018<\/span>\r\n\t\t\t\t\t\t\t\t\t<span class=\"text info\">
+-- <span class=\"uitzondering-tekst\">Let op: \u00e9\u00e9nmalig verschoven naar zaterdag 28 april 2018<\/span><br>In de oneven weken op vrijdag<\/span>\r\n\t\t\t\t\t\t\t<\/li>\r\n\t\t\t\t\t
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+   for web_afvaltype,web_afvaltype_date in string.gmatch(Webdata, '.-soort.(.-)%sclearfix.-text dag.-\\">(.-)<\\/span') do
+
       if (web_afvaltype == nil) then
+         print ('! WestlandAfval -->: "web_afvaltype" not found Webdata ... Stopping process' )
          dprint("web_afvaltype:nil")
          break
       end
@@ -77,43 +100,54 @@ function getdata()
          print ('! WestlandAfval -->: Webdata: ' .. Webdata)
          break
       end
+      -- get deviating pickup due to holidays
+      local web_afvaltype_date_real=web_afvaltype_date
+      for web_afvaltype_date_tmp in string.gmatch(Webdata, '.-soort.'..web_afvaltype..'%sclearfix.-uitzondering.tekst\\">(.-)<\\/span') do
+         web_afvaltype_date_tmp = string.gsub(web_afvaltype_date_tmp,"\\u00e9","é")
+         dprint('afwijkende datum voor '..tostring(web_afvaltype).."  ==> "..tostring(web_afvaltype_date_tmp))
+         web_afvaltype_date_real=web_afvaltype_date_tmp
+      end
+      -- replace \uxxxx characters
       i=i+1
-      dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaltype_date:"..tostring(web_afvaltype_date))
+      dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaltype_date:"..tostring(web_afvaltype_date).."   web_afvaltype_date_real:"..tostring(web_afvaltype_date_real))
       logtxt = logtxt .. web_afvaltype .. " - " .. web_afvaltype_date.. " ; "
-      planning = planning .. web_afvaltype .. "-" .. web_afvaltype_date.. "\r\n"
+      planning = planning .. web_afvaltype .. "-" .. web_afvaltype_date_real.. "\r\n"
       -- Calculate the daysdifference between found date and Now and send notification is required
-      local afvalday,s_afvalmonth,afvalyear=web_afvaltype_date:match("%a- (%d+) (%a+) (%d+)")
-      local afvalmonth = MON[s_afvalmonth:sub(1,3)]
-      local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
-      local daysdifference = Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+      local daysdifference = DaysDiff(web_afvaltype_date)
+      local daysdifference_real = DaysDiff(web_afvaltype_date_real)
       if (afvaltype_cfg[web_afvaltype] == nil) then
          print ('! WestlandAfval -->: Afvalsoort not defined in afvaltype_cfg for found Afvalsoort Webdata: ' .. web_afvaltype)
       end
-      dprint("daysdifference:"..tostring(daysdifference).."   afvaltype_cfg[web_afvaltype].daysbefore:"..tostring(afvaltype_cfg[web_afvaltype].daysbefore))
-      dag = ""
-      dagb = nil
+      dprint("i:"..i.." daysdifference:"..tostring(daysdifference).." daysdifference_real:"..tostring(daysdifference_real).."   afvaltype_cfg[web_afvaltype].daysbefore:"..tostring(afvaltype_cfg[web_afvaltype].daysbefore))
+      -- Original date notification of change
       if (timenow.hour==afvaltype_cfg[web_afvaltype].hour
       and timenow.min==afvaltype_cfg[web_afvaltype].min
-      and daysdifference == afvaltype_cfg[web_afvaltype].daysbefore) then
-         dagb = afvaltype_cfg[web_afvaltype].daysbefore
+      and daysdifference == afvaltype_cfg[web_afvaltype].daysbefore
+      and daysdifference ~= daysdifference_real) then
+         local notificationtext = "WestlandAfval -->: ".. web_afvaltype .. " - " .. web_afvaltype_date_real
+         commandArray['SendNotification']='WestlandAfval -->#'..notificationtext
       end
-      if (afvaltype_cfg[web_afvaltype.."2"] ~= nil
-      and timenow.hour==afvaltype_cfg[web_afvaltype.."2"].hour
-      and timenow.min==afvaltype_cfg[web_afvaltype.."2"].min
-      and daysdifference == afvaltype_cfg[web_afvaltype.."2"].daysbefore) then
-         dagb = afvaltype_cfg[web_afvaltype.."2"].daysbefore
-      end
-      if dagb ~= nil then
+      -- first notification
+      if (timenow.hour==afvaltype_cfg[web_afvaltype].hour
+         and timenow.min==afvaltype_cfg[web_afvaltype].min
+         and daysdifference_real == afvaltype_cfg[web_afvaltype].daysbefore)
+      or (afvaltype_cfg[web_afvaltype.."2"] ~= nil
+         and timenow.hour==afvaltype_cfg[web_afvaltype.."2"].hour
+         and timenow.min==afvaltype_cfg[web_afvaltype.."2"].min
+         and daysdifference_real == afvaltype_cfg[web_afvaltype.."2"].daysbefore)
+      then
          print ('WestlandAfval --> Notification send for ' .. web_afvaltype)
-
-         if dagb == 0 then
-            dag = "vandaag"
-         elseif dagb == 1 then
-            dag = "morgen"
+         local dagtext = ""
+         if daysdifference_real == 0 then
+            dagtext = "vandaag"
+         elseif daysdifference_real == 1 then
+            dagtext = "morgen"
+         elseif daysdifference_real == 2 then
+            dagtext = "overmorgen"
          else
-            dag = "over " .. dagb .. " dagen"
+            dagtext = "over " .. daysdifference_real .. " dagen"
          end
-         local notificationtext = "WestlandAfval -->: " .. dag .. " wordt ".. web_afvaltype .. " afval opgehaald!"
+         local notificationtext = "WestlandAfval -->: " .. dagtext .. " wordt ".. web_afvaltype .. " afval opgehaald!"
          commandArray['SendNotification']='WestlandAfval -->#'..notificationtext
       end
    end
