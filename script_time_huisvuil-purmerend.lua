@@ -5,11 +5,11 @@
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
 -- based on script by zicht @ http://www.domoticz.com/forum/viewtopic.php?t=17963
 -- based on script by nf999 @ http://www.domoticz.com/forum/viewtopic.php?f=61&t=17963&p=174908#p169637
-
--- https://datalab.purmerend.nl/afvalkalender/?area=WIJKNAAM&kind=&date=
-local myAfvalDevice='Purmerend'   -- Set to the TEXT sebnsor DeviceName from Domoticz
+--
+-- Link to WebSite:  https://datalab.purmerend.nl/afvalkalender/?area=MyArea&kind=&date=
+local myAfvalDevice='Purmerend'   -- Set to the TEXT sensor DeviceName from Domoticz
 local ShowNextEvents = 3          -- indicate the next events to show in the TEXT Sensor in Domoticz
-local area='??'                   -- Set to the Wijknaam found on the Website
+local MyArea='???????'            -- Set to the Wijknaam found on the Website
 local NotificationEmailAdress = "??@??.??"  -- Set to the Notification EmailAddress
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
@@ -34,6 +34,7 @@ local afvaltype_cfg = {
    ["Papier"]     ={hour=12,min=00,daysbefore=0,text="Blauwe Container met Oud papier"},
    ["Dummy"]      ={hour=2,min=01,daysbefore=0,text="dummy"}}
 --==== end of config ======================================================================================================
+
 -- General conversion tables
 local MON_e_n={January="januari", February="februari", March="maart", April="april", May="mei", June="juni", July="juli", August="augustus", September="september", October="oktober", November="november", December="december"}
 local WDAY_e_n={Sunday="zondag", Monday="maandag", Tuesday="dinsdag", Wednesday="woensdag", Thursday="donderdag", Friday="vrijdag", Saturday="zaterdag"}
@@ -122,7 +123,7 @@ function Perform_Update()
    print('AF-PUR module start check')
    dprint('=== web update ================================')
    -- get data from AF-PUR
-   local commando = "curl --max-time 5 -s \"https://datalab.purmerend.nl/afvalkalender/?area=Weidevenne\""
+   local commando = "curl --max-time 5 -s \"https://datalab.purmerend.nl/afvalkalender/?area="..MyArea.."\""
    local tmp = os.capture(commando, 5)
    if ( tmp == "" ) then
       print("AF-PUR: Empty result from curl command")
