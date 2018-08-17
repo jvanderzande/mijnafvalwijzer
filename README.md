@@ -9,3 +9,7 @@ script version by nf999 @ http://www.domoticz.com/forum/viewtopic.php?f=61&t=179
 # huisvuil-westland
 This Domoticz script will retrieve the next garbage collection for your home address and update a TEXT device in Domoticz for only de Gemeente Westland.<br>
 It will also send you a notification at the specified time 0-x days before the event.
+
+# huisvuil-purmerend
+This Domoticz script will retrieve the next garbage collection for your Wijk and update a TEXT device in Domoticz for only de Gemeente Purmerend.<br>
+It will also send you a notification at the specified time 0-x days before the event.
