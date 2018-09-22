@@ -13,3 +13,7 @@ It will also send you a notification at the specified time 0-x days before the e
 # huisvuil-purmerend
 This Domoticz script will retrieve the next garbage collection for your Wijk and update a TEXT device in Domoticz for only de Gemeente Purmerend.<br>
 It will also send you a notification at the specified time 0-x days before the event.
+
+# huisvuil-heerlen
+This Domoticz script will retrieve the next garbage collection for your postcode-housenumber and update a TEXT device in Domoticz for only de Gemeente Heerlen.<br>
+It will also send you a notification at the specified time 0-x days before the event.
