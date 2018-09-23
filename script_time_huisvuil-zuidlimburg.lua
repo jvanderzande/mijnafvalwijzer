@@ -200,7 +200,6 @@ for avtype,get in pairs(afvaltype_cfg) do
    end
 end
 -- get information from website, update device and send notification when required
-needupdate = true
 if needupdate then
    Perform_Update()
 else
