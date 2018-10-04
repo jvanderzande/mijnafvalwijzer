@@ -31,7 +31,8 @@ local afvaltype_cfg = {
    ["Groente, Fruit en Tuinafval"]        ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinfval"},
    ["Plastic, Metalen en Drankkartons"]   ={hour=19,min=22,daysbefore=1,text="Oranje Container met Plastic en Metalen"},
    ["Klein chemisch afval"]               ={hour=19,min=22,daysbefore=1,text="Blauwe Bak"},
-   ["Papier en karton"]                   ={hour=12,min=00,daysbefore=0,text="Blauwe Container met Oud papier"}}
+   ["Papier en karton"]                   ={hour=12,min=00,daysbefore=0,text="Blauwe Container met Oud papier"},
+   ["dummy"]                              ={hour=02,min=10,daysbefore=0,text="dummy to trigger update of text sensor at night"}}
 --==== end of config ======================================================================================================
 -- General conversion tables
 local MON_e_n={January="januari", February="februari", March="maart", April="april", May="mei", June="juni", July="juli", August="augustus", September="september", October="oktober", November="november", December="december"}
@@ -71,7 +72,7 @@ function getdaysdiff(i_afvaltype_date)
    local afvalmonth=timenow.month
    local s_afvalmonth="vandaag"
    -- check if date in variable i_afvaltype_date contains "vandaag" in stead of a valid date -> use today's date
-   if i_afvaltype_date == "vandaag" then
+   if string.lower(i_afvaltype_date) == "vandaag" then
       -- use the set todays info
    else
       afvalday,s_afvalmonth=i_afvaltype_date:match("%a+ (%d+) (%a+)")
@@ -129,18 +130,17 @@ function Perform_Update()
    end
    -- strip html stuff and format for domoticz
    tmp=tmp:gsub('%c','')
-   --~ <p class="firstDate">donderdag 22 maart</p>
-   --~ <p class="firstDate">vandaag</p>
-   --~ <p class="firstWasteType">Groente, Fruit en Tuinafval</p>
    -- get the data for these fields
    web_afvaldate,web_afvaltype=tmp:match('.-<p class="firstDate">(.-)</p>.-<p class="firstWasteType">(.-)</p>')
+   -- replace multiple spaces for only one
+   web_afvaltype = string.gsub(web_afvaltype, '%s+', ' ')
    dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
    if (web_afvaldate == nil or web_afvaltype == nil) then
       print ('! afvalWijzer: No valid data found in returned webdata.  skipping the rest of the logic.')
       return
    end
    -- set the date back to a real date to allow for future processing
-   if web_afvaldate == "vandaag" then
+   if string.lower(web_afvaldate) == "vandaag" then
       if WDAY_e_n[os.date("%A")] == nil then
          dprint(" Error: Not in table WDAY_e_n[]:"..os.date("%A"))
       end
@@ -154,6 +154,7 @@ function Perform_Update()
    daysdifference = getdaysdiff(web_afvaldate)
    if (afvaltype_cfg[web_afvaltype] == nil) then
       print ('! afvalWijzer: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
+      return
    end
    notification(web_afvaltype,web_afvaldate,daysdifference)  -- check notification for new found info
 
@@ -165,11 +166,15 @@ function Perform_Update()
    for dev_date, dev_afvaltype in string.gmatch(curdevtext..'\r\n', '(.-)=(.-)\r\n+') do
       dprint("=> process:"..dev_date.."="..dev_afvaltype)
       if web_afvaltype == dev_afvaltype then
-         dprint(".> skip same as Web  -> dev_afvaltype:"..dev_date.."="..dev_afvaltype)
+         dprint(".> skip same as current domoticz text -> dev_afvaltype:"..dev_date.."="..dev_afvaltype)
+      elseif afvaltype_cfg[dev_afvaltype] == nil then
+         dprint(".> skip dev_afvaltype as this doesn exist in table:"..dev_afvaltype)
       else
          -- Get DaysDiff
          daysdiffdev = getdaysdiff(dev_date)
-         if daysdiffdev < 0  then
+         if daysdiffdev == nil  then
+            -- something is wrong with the curent text, don't do anything
+         elseif daysdiffdev < 0  then
             dprint(".> skip old -> dev_afvaltype:"..dev_date.."="..dev_afvaltype.."   daysdiffdev:"..daysdiffdev)
          else
             dprint(".> Add back to TxtDev -> afvaltype:"..dev_date.."="..dev_afvaltype.."   daysdiffdev:"..daysdiffdev)
