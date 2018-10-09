@@ -38,7 +38,8 @@ local afvaltype_cfg = {
 -- General conversion tables
 local MON_e_n={January="januari", February="februari", March="maart", April="april", May="mei", June="juni", July="juli", August="augustus", September="september", October="oktober", November="november", December="december"}
 local WDAY_e_n={Sunday="zondag", Monday="maandag", Tuesday="dinsdag", Wednesday="woensdag", Thursday="donderdag", Friday="vrijdag", Saturday="zaterdag"}
-local MON={Jan=1,Feb=2,March=3,April=4,May=5,June=6,July=7,Aug=8,Sept=9,Oct=10,Nov=11,Dec=12}
+--~ local MON={Jan=1,Feb=2,March=3,April=4,May=5,June=6,July=7,Aug=8,Sept=9,Okt=10,Nov=11,Dec=12}
+local MON={jan=1,feb=2,maa=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
 
 -- round
 function Round(num, idp)
@@ -76,12 +77,13 @@ function getdaysdiff(i_afvaltype_date)
    if i_afvaltype_date == "vandaag" then
       -- use the set todays info
    else
-      s_afvalmonth, afvalday=i_afvaltype_date:match("(%a-). (%d+), %d+")
+      -- new date format: di 09 oktober 2018
+      afvalday, s_afvalmonth, afvalyear =i_afvaltype_date:match("%a-%s-(%d+)%s-(%a-)%s-(%d+)")
       if (afvalday == nil or s_afvalmonth == nil) then
          print ('! AF-PUR: No valid date found in i_afvaltype_date: ' .. i_afvaltype_date)
          return
       end
-      afvalmonth = MON[s_afvalmonth]
+      afvalmonth = MON[string.sub(s_afvalmonth,1,3)]
    end
    dprint("...gerd-> afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
    --
