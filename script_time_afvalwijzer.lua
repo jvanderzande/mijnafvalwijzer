@@ -122,7 +122,7 @@ function Perform_Update()
    print('afvalWijzer module start check')
    dprint('=== web update ================================')
    -- get data from afvalWijzer
-   local commando = "curl --max-time 5 -s 'http://www.mijnafvalwijzer.nl/nl/"..Postcode.."/"..Huisnummer.."/'"
+   local commando = "curl --max-time 5 -s 'https://www.mijnafvalwijzer.nl/nl/"..Postcode.."/"..Huisnummer.."/'"
    local tmp = os.capture(commando, 5)
    if ( tmp == "" ) then
       print("afvalWijzer: Empty result from curl command")
