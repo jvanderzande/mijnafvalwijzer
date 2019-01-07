@@ -9,7 +9,8 @@
 -- Link to WebSite:  https://datalab.purmerend.nl/afvalkalender/?area=MyArea&kind=&date=
 local myAfvalDevice='Purmerend'   -- Set to the TEXT sensor DeviceName from Domoticz
 local ShowNextEvents = 3          -- indicate the next events to show in the TEXT Sensor in Domoticz
-local MyArea='???????'            -- Set to the Wijknaam found on the Website
+local MyArea='???????'            -- Set to the area= exact value found on the Website URL when you check it manually eg:
+                                  -- https://datalab.purmerend.nl/afvalkalender/?area=Weidevenne+en+Hazepolder
 local NotificationEmailAdress = "??@??.??"  -- Set to the Notification EmailAddress
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
