@@ -9,7 +9,7 @@
 -- Link to WebSite:  https://datalab.purmerend.nl/afvalkalender/?area=MyArea&kind=&date=
 local myAfvalDevice='Purmerend'   -- Set to the TEXT sensor DeviceName from Domoticz
 local ShowNextEvents = 3          -- indicate the next events to show in the TEXT Sensor in Domoticz
-local MyArea='???????'            -- Set to the Wijknaam found on the Website
+local MyArea='???????'            -- Set to the Wijknaam found on the Website (If it has spaces fill in a + instead of a space)
 local NotificationEmailAdress = "??@??.??"  -- Set to the Notification EmailAddress
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
@@ -30,7 +30,7 @@ local debug = false  -- get debug info in domoticz console/log
 -- text       ==> define the text for the notification.
 local afvaltype_cfg = {
    ["Rest"]       ={hour=19,min=22,daysbefore=1,text="Grijze Container met Restafval"},
-   ["GFT"]        ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinfval"},
+   ["GFT"]        ={hour=19,min=22,daysbefore=1,text="Bruine Container met Tuinfval"},
    ["Papier"]     ={hour=12,min=00,daysbefore=0,text="Blauwe Container met Oud papier"},
    ["Dummy"]      ={hour=2,min=01,daysbefore=0,text="dummy"}}
 --==== end of config ======================================================================================================
