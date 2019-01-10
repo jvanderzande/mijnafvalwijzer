@@ -57,7 +57,7 @@ function getdata()
    print('WestlandAfval --> module start')
 
    -- get data from afvalWijzer
-   local commando = "curl -k 'https://huisvuilkalender.gemeentewestland.nl/huisvuilkalender/Huisvuilkalender/get-huisvuilkalender-ajax' -H 'Origin: https://huisvuilkalender.gemeentewestland.nl' -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Referer: https://huisvuilkalender.gemeentewestland.nl/huisvuilkalender?dummy=0.9778403611955824' -H 'X-Requested-With: XMLHttpRequest' -H 'Connection: keep-alive' --data 'postcode=" .. Postcode .. "&query=' --compressed"
+   local commando = "curl -k \"https://huisvuilkalender.gemeentewestland.nl/huisvuilkalender/Huisvuilkalender/get-huisvuilkalender-ajax\" -H \"Origin: https://huisvuilkalender.gemeentewestland.nl\" -H \"Content-Type: application/x-www-form-urlencoded; charset=UTF-8\" -H \"Accept: application/json, text/javascript, */*; q=0.01\" -H \"Referer: https://huisvuilkalender.gemeentewestland.nl/huisvuilkalender?dummy=0.9778403611955824\" -H \"X-Requested-With: XMLHttpRequest\" -H \"Connection: keep-alive\" --data \"postcode=" .. Postcode .. "&query=\" --compressed"
    local Webdata = os.capture(commando, 5)
    local planning = ""
    local logtxt = ""

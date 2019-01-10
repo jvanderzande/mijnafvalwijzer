@@ -1,3 +1,6 @@
+-----------------------------------------------------------------------------------------------------------------
+-- MijnAfvalWijzer huisvuil script
+-----------------------------------------------------------------------------------------------------------------
 --
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
@@ -99,7 +102,7 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
    and timenow.hour==afvaltype_cfg[s_afvaltype].hour
    and timenow.min==afvaltype_cfg[s_afvaltype].min
    and i_daysdifference == afvaltype_cfg[s_afvaltype].daysbefore then
-     dag = ""
+     local dag = ""
      if afvaltype_cfg[s_afvaltype].daysbefore == 0 then
        dag = "vandaag"
      elseif afvaltype_cfg[s_afvaltype].daysbefore == 1 then
