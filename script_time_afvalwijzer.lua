@@ -149,43 +149,45 @@ function Perform_Update()
    local txt = ""
    local cnt = 0
    for web_afvaltype, web_afvaldate in string.gmatch(tmp, 'textDecorationNone".-title="(.-)"><p class=".-">(.-)<br') do
-     if web_afvaltype~= nil and web_afvaldate ~= nil then
-       -- first match for each Type we save the date to capture the first next dates
-       if afvaltype_cfg[web_afvaltype] ~= nil then
+      if web_afvaltype~= nil and web_afvaldate ~= nil then
+         -- replace multiple spaces for only one
+         web_afvaltype = string.gsub(web_afvaltype, '%s+', ' ')
+         -- first match for each Type we save the date to capture the first next dates
+         if afvaltype_cfg[web_afvaltype] ~= nil then
          -- check whether the first nextdate for this afvaltype is already found
-         if afvaltype_cfg[web_afvaltype].nextdate == nil then
-            dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
-            -- set the date back to a real date to allow for future processing
-            if string.lower(web_afvaldate) == "vandaag" then
-               if WDAY_e_n[os.date("%A")] == nil then
-                  dprint(" Error: Not in table WDAY_e_n[]:"..os.date("%A"))
+            if afvaltype_cfg[web_afvaltype].nextdate == nil then
+               dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
+               -- set the date back to a real date to allow for future processing
+               if string.lower(web_afvaldate) == "vandaag" then
+                  if WDAY_e_n[os.date("%A")] == nil then
+                     dprint(" Error: Not in table WDAY_e_n[]:"..os.date("%A"))
+                  end
+                  if MON_e_n[os.date("%B")] == nil then
+                     dprint(" Error: Not in table MON_e_n[]:"..os.date("%A"))
+                  end
+                  web_afvaldate = WDAY_e_n[os.date("%A")].." "..os.date("%d").." "..MON_e_n[os.date("%B")]
+                  dprint('Change web_afvaldate "vandaag" to :' .. web_afvaldate)
                end
-               if MON_e_n[os.date("%B")] == nil then
-                  dprint(" Error: Not in table MON_e_n[]:"..os.date("%A"))
+               -- Get days diff
+               daysdiffdev = getdaysdiff(web_afvaldate)
+               -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
+               if daysdiffdev == nil then
+                  dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
+               elseif daysdiffdev >= 0 then
+                  -- Set the nextdate for this afvaltype
+                  afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
+                  -- fill the text with the next defined number of events
+                  if cnt < ShowNextEvents then
+                     txt = txt..web_afvaldate .. "=" .. web_afvaltype .. "\r\n"
+                     cnt=cnt+1
+                  end
                end
-               web_afvaldate = WDAY_e_n[os.date("%A")].." "..os.date("%d").." "..MON_e_n[os.date("%B")]
-               dprint('Change web_afvaldate "vandaag" to :' .. web_afvaldate)
+               notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
             end
-            -- Get days diff
-            daysdiffdev = getdaysdiff(web_afvaldate)
-            -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
-            if daysdiffdev == nil then
-               dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
-            elseif daysdiffdev >= 0 then
-              -- Set the nextdate for this afvaltype
-              afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
-              -- fill the text with the next defined number of events
-              if cnt < ShowNextEvents then
-                txt = txt..web_afvaldate .. "=" .. web_afvaltype .. "\r\n"
-                cnt=cnt+1
-              end
-            end
-            notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
-         end
-       else
+         else
          print ('! @AFW: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
-       end
-     end
+         end
+      end
    end
    dprint("-End   --------------------------------------------------------------------------------------------")
    if (cnt==0) then
