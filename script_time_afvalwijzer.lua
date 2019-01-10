@@ -76,7 +76,7 @@ function getdaysdiff(i_afvaltype_date)
    local afvalmonth=timenow.month
    local s_afvalmonth="vandaag"
    -- check if date in variable i_afvaltype_date contains "vandaag" in stead of a valid date -> use today's date
-   if i_afvaltype_date == "vandaag" or i_afvaltype_date == "Vandaag" then
+   if string.lower(i_afvaltype_date) == "vandaag" then
       -- use the set todays info
    else
       afvalday,s_afvalmonth=i_afvaltype_date:match("%a+ (%d+) (%a+)")
