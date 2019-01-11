@@ -26,11 +26,12 @@ NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email A
 --~ 	["kerstbomen"]    ={hour=19,min=01,daysbefore=1,reminder=0,text="Kerstbomen"},
 --~ 	["takken"]        ={hour=19,min=01,daysbefore=1,reminder=0,text="snoeiafval"},
 --~ 	["papier"]        ={hour=12,min=05,daysbefore=0,reminder=0,text="Blauwe Container met Oud papier"},
+--~ 	["plastic"]       ={hour=19,min=01,daysbefore=1,reminder=0,text="plastic en drankenkartons"},
 --~ 	["grofvuil"]      ={hour=19,min=01,daysbefore=1,reminder=0,text="grofvuil/oud ijzer"},
 --~ 	["tuinafval"]     ={hour=19,min=01,daysbefore=1,reminder=0,text="tuinafval"},
 --~ -- Add any missing records above this line
---~ 	["dummy1"]        ={hour=18,min=39,daysbefore=0,reminder=0,text="dummy to trigger update for testing"},
---~ 	["dummy"]         ={hour=02,min=10,daysbefore=0,reminder=0,text="dummy to trigger update of text sensor at night"}}
+--~ 	["dummy1"]        ={hour=02,min=10,daysbefore=0,reminder=0,text="dummy to trigger update for testing"},
+--~ 	["dummy2"]        ={hour=02,min=10,daysbefore=0,reminder=0,text="dummy to trigger update of text sensor at night"}}
 
 --~ -- Define the Notification Title and body text. there are 3 variables you can include:
 --~ -- @DAG@ = Will be replaced by (vandaag/morgen/over x dagen)
