@@ -228,7 +228,7 @@ commandArray = {}
 timenow = os.date("*t")
 
 -- check for notification times and run update only when we are at one of these defined times
-print('@AFW: AfvalWijzer module start check')
+dprint('AfvalWijzer module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
 	dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
@@ -242,7 +242,7 @@ end
 if needupdate then
 	Perform_Update()
 else
-	print("@AFW: Scheduled time(s) not reached yet, so nothing to do!")
+	dprint("Scheduled time(s) not reached yet, so nothing to do!")
 end
 
 return commandArray
