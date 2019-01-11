@@ -151,7 +151,7 @@ function Perform_Update()
    local web_afvaldate=""
    local txt = ""
    local cnt = 0
-   for web_afvaltype, web_afvaldate in string.gmatch(tmp, 'textDecorationNone".-title="(.-)"><p class=".-">(.-)<br') do
+   for web_afvaldate, web_afvaltype in string.gmatch(tmp, 'textDecorationNone".-<p class=".-">.-(.-)<br.-afvaldescr">(.-)</span') do
       if web_afvaltype~= nil and web_afvaldate ~= nil then
          -- replace multiple spaces for only one
          web_afvaltype = string.gsub(web_afvaltype, '%s+', ' ')
@@ -197,6 +197,7 @@ function Perform_Update()
      print ('! @AFW: No valid data found in returned webdata.  skipping the rest of the logic.')
      return
    end
+   dprint(txt)
    -- always update the domoticz device so one can see it is updating and when it was ran last.
    commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
    if (otherdevices[myAfvalDevice] ~= txt) then
