@@ -104,11 +104,11 @@ function getdaysdiff(i_afvaltype_date)
       return
    end
    local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
-   textformat = textformat:gsub('dd',afvalday)
-   textformat = textformat:gsub('mmm',nMON[tonumber(afvalmonth)])
-   textformat = textformat:gsub('mm',afvalmonth)
-   textformat = textformat:gsub('yyyy',afvalyear)
-   textformat = textformat:gsub('yy',afvalyear:sub(3,4))
+   stextformat = stextformat:gsub('dd',afvalday)
+   stextformat = stextformat:gsub('mmm',nMON[tonumber(afvalmonth)])
+   stextformat = stextformat:gsub('mm',afvalmonth)
+   stextformat = stextformat:gsub('yyyy',afvalyear)
+   stextformat = stextformat:gsub('yy',afvalyear:sub(3,4))
    dprint("...gerd-> diff:"..Round(os.difftime(afvalTime, curTime)/86400,0).. "  afvalyear:"..tostring(afvalyear).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))   --
    -- return number of days diff
    return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
@@ -200,6 +200,7 @@ function Perform_Update()
             if afvaltype_cfg[web_afvaltype].nextdate == nil and txtcnt < ShowNextEvents then
                -- get the long description from the JSON data
                dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
+               stextformat = textformat
                -- Get days diff
                daysdiffdev = getdaysdiff(web_afvaldate)
                -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
@@ -210,9 +211,9 @@ function Perform_Update()
                   afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
                   -- fill the text with the next defined number of events
                   if txtcnt < ShowNextEvents then
-                     textformat = textformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
-                     textformat = textformat:gsub('sdesc',web_afvaltype)
-                     txt = txt..textformat.."\r\n"
+                     stextformat = stextformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
+                     stextformat = stextformat:gsub('sdesc',web_afvaltype)
+                     txt = txt..stextformat.."\r\n"
                      txtcnt = txtcnt + 1
                   end
                   notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
