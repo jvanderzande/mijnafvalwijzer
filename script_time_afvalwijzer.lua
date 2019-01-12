@@ -15,8 +15,18 @@ Postcode='your-zip-here'                                 -- Your postalcode
 Huisnummer='your-housenr-here'                           -- Your housnr
 NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email Address for the notifications
 
--- Switch on Debugging in case of issues => set to true/false=======
-debug = false  -- get debug info in domoticz console/log
+
+debug = false    -- get debug info in domoticz console/log
+-- date options:
+--    dd  = day in 2 digits   eg 31
+--    mm  = month in 2 digits eg 01
+--    mmm = month abbreviation in 3 characters eg : jan
+--    yy   = year in 2 digits eg 19
+--    yyyy = year in 4 digits eg 2019
+-- Afvaltype description options
+--    sdesc = short afvaltype description from Website  eg pmd
+--    ldesc = LOng afvaltype description from Website   eg Plastic, Metalen en Drankkartons
+textformat = "dd mmm yy ldesc"
 
 -- ### define a line for each afvaltype_cfg retuned by the webrequest:
    -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
@@ -36,7 +46,7 @@ afvaltype_cfg = {
    ["grofvuil"]      ={hour=19,min=01,daysbefore=1,reminder=0,text="grofvuil/oud ijzer"},
    ["tuinafval"]     ={hour=19,min=01,daysbefore=1,reminder=0,text="tuinafval"},
 -- Add any missing records above this line
-   ["dummy1"]        ={hour=12,min=16,daysbefore=0,reminder=0,text="dummy to trigger update for testing"},
+   ["dummy1"]        ={hour=02,min=10,daysbefore=0,reminder=0,text="dummy to trigger update for testing"},
    ["dummy2"]        ={hour=02,min=10,daysbefore=0,reminder=0,text="dummy to trigger update of text sensor at night"}}
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
@@ -94,11 +104,14 @@ function getdaysdiff(i_afvaltype_date)
       return
    end
    local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
-   local fdate =  afvalday.." "..nMON[tonumber(afvalmonth)].." "..afvalyear
-
+   textformat = textformat:gsub('dd',afvalday)
+   textformat = textformat:gsub('mmm',nMON[tonumber(afvalmonth)])
+   textformat = textformat:gsub('mm',afvalmonth)
+   textformat = textformat:gsub('yyyy',afvalyear)
+   textformat = textformat:gsub('yy',afvalyear:sub(3,4))
    dprint("...gerd-> diff:"..Round(os.difftime(afvalTime, curTime)/86400,0).. "  afvalyear:"..tostring(afvalyear).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))   --
    -- return number of days diff
-   return fdate,Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+   return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
 end
 
 function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
@@ -151,6 +164,10 @@ function Perform_Update()
       print("@AFW: Empty data table in JSON data...  stopping execution.")
       return
    end
+   -- get the description records into rdesc to retrieve the long description
+   rdesc = rdata["langs"]
+   rdesc = rdesc["data"]
+   -- get the ophaaldagen tabel for the coming scheduled pickups
    rdata = rdata["ophaaldagen"]
    if type(rdata) ~= "table" then
       print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
@@ -181,9 +198,10 @@ function Perform_Update()
          else
             -- check whether the first nextdate for this afvaltype is already found to get only one next date per AfvalType
             if afvaltype_cfg[web_afvaltype].nextdate == nil and txtcnt < ShowNextEvents then
+               -- get the long description from the JSON data
                dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
                -- Get days diff
-               fdate,daysdiffdev = getdaysdiff(web_afvaldate)
+               daysdiffdev = getdaysdiff(web_afvaldate)
                -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
                if daysdiffdev == nil then
                   dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
@@ -192,7 +210,9 @@ function Perform_Update()
                   afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
                   -- fill the text with the next defined number of events
                   if txtcnt < ShowNextEvents then
-                     txt = txt..fdate .. " -> " .. web_afvaltype .. "\r\n"
+                     textformat = textformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
+                     textformat = textformat:gsub('sdesc',web_afvaltype)
+                     txt = txt..textformat.."\r\n"
                      txtcnt = txtcnt + 1
                   end
                   notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
