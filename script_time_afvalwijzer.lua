@@ -95,7 +95,7 @@ function os.capture(cmd, rep)  -- execute command to get site
    return s
 end
 -- get days between today and provided date
-function getdaysdiff(i_afvaltype_date)
+function getdaysdiff(i_afvaltype_date, stextformat)
    local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
    -- check if date in variable i_afvaltype_date contains "vandaag" in stead of a valid date -> use today's date
    afvalyear,afvalmonth,afvalday=i_afvaltype_date:match("(%d-)-(%d-)-(%d-)$")
@@ -111,7 +111,7 @@ function getdaysdiff(i_afvaltype_date)
    stextformat = stextformat:gsub('yy',afvalyear:sub(3,4))
    dprint("...gerd-> diff:"..Round(os.difftime(afvalTime, curTime)/86400,0).. "  afvalyear:"..tostring(afvalyear).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))   --
    -- return number of days diff
-   return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+   return stextformat, Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
 end
 
 function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
@@ -200,9 +200,9 @@ function Perform_Update()
             if afvaltype_cfg[web_afvaltype].nextdate == nil and txtcnt < ShowNextEvents then
                -- get the long description from the JSON data
                dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
-               stextformat = textformat
+               local stextformat = textformat
                -- Get days diff
-               daysdiffdev = getdaysdiff(web_afvaldate)
+               stextformat, daysdiffdev = getdaysdiff(web_afvaldate, stextformat)
                -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
                if daysdiffdev == nil then
                   dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
@@ -263,6 +263,7 @@ for avtype,get in pairs(afvaltype_cfg) do
       needupdate = true
    end
 end
+      needupdate = true
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
