@@ -15,7 +15,6 @@ Postcode='your-zip-here'                                 -- Your postalcode
 Huisnummer='your-housenr-here'                           -- Your housnr
 NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email Address for the notifications
 
-
 debug = false    -- get debug info in domoticz console/log
 -- date options:
 --    dd  = day in 2 digits   eg 31
@@ -263,7 +262,6 @@ for avtype,get in pairs(afvaltype_cfg) do
       needupdate = true
    end
 end
-      needupdate = true
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
