@@ -38,8 +38,7 @@ local afvaltype_cfg = {
    ["GFT"]                             ={hour=19,min=02,daysbefore=1,text="Groene Container met Tuinfval"},
    ["Plastic, Metaal en Drankkartons"] ={hour=19,min=02,daysbefore=1,text="PMD bak"},
    ["Papier en karton"]                ={hour=12,min=01,daysbefore=0,text="Oud papier"},
-   ["onbekend1"]                       ={hour=19,min=02,daysbefore=3,text="Snoeiafval op afspraak"},
-   ["onbekend2"]                       ={hour=19,min=02,daysbefore=3,text="Snoeiafval op afspraak"},
+   ["onbekend1"]                       ={hour=19,min=02,daysbefore=1,text="onbekent"},
    ["Dummy1"]                          ={hour=02,min=02,daysbefore=0,text="dummy"},   -- dummy is used to force update while testing
    ["Dummy2"]                          ={hour=02,min=02,daysbefore=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
 --==== end of config ======================================================================================================
