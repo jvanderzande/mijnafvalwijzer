@@ -77,9 +77,6 @@ if (file_exists("alvalwijzerconfig.lua")) then
    dofile("alvalwijzerconfig.lua")
    dprint("Using user config file: alvalwijzerconfig.lua")
 end
--- load JSON lib
-JSON = require "JSON";
---~ JSON = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()
 -- round function
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
