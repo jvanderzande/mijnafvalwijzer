@@ -2,11 +2,12 @@
 -- file: alvalwijzer_userconfig.lua
 -- You can define your information in this file without updating the main script eachtime
 ------------------------------------------------------------------------------------------
-myAfvalDevice='Container'                                -- The Text devicename in Domoticz
-ShowNextEvents = 3                                       -- indicate the next x events to show in the TEXT Sensor in Domoticz
-Postcode='your-zip-here'                                 -- Your postalcode
-Huisnummer='your-housenr-here'                           -- Your housnr
-NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email Address for the notifications
+myAfvalDevice='Container'           -- The Text devicename in Domoticz
+ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
+Postcode='your-zip-here'            -- Your postalcode
+Huisnummer='your-housenr-here'      -- Your housnr
+NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
+Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- uncoment any of the below when you need to override the standard settings
 --~ -- Switch on Debugging in case of issues => set to true/false=======
@@ -40,8 +41,3 @@ NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email A
 --~ -- @AFVALDATE@ = Will be replaced by the pickup date found on the internet
 --~ notificationtitle = '@AFW: @DAG@ de @AFVALTEXT@ aan de weg zetten!'
 --~ notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
-myAfvalDevice='Barry AfvalWijzer'
-ShowNextEvents = 3       -- indicate the next events to show in the TEXT Sensor in Domoticz
-Postcode = '7081DL'      -- Your postalcode
-Huisnummer = '4'         -- Your housnr
-NotificationEmailAdress = "jos.vanderzande@yahoo.com"
