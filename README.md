@@ -18,6 +18,10 @@ It will also send you a notification at the specified time 0-x days before the e
 This Domoticz script will retrieve the next garbage collection for your postcode-housenumber and update a TEXT device in Domoticz for only Gemeentes in Zuid Limburg.<br>
 It will also send you a notification at the specified time 0-x days before the event.
 
+# huisvuil-mijnbink
+This Domoticz script will retrieve the next garbage collection for your postcode-housenumber and update a TEXT device in Domoticz for only Limburg gemeentes: Laarbeek, Deurne, Gemert-Bakel, Heeze-Leende, Someren, Asten en Nuenen.<br>
+It will also send you a notification at the specified time 0-x days before the event.
+
 # huisvuil-zuidwest-friesland
 This Domoticz script will retrieve the next garbage collection for your postcode-housenumber and update a TEXT device in Domoticz for only Gemeentes in Zuidwest Friesland.<br>
 It will also send you a notification at the specified time 0-x days before the event.
