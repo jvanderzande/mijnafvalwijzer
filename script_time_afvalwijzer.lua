@@ -1,6 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 -----------------------------------------------------------------------------------------------------------------
+ver="20190112-1345"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -154,6 +155,7 @@ end
 
 -- Do the actual update retrieving data from the website and processing it
 function Perform_Update()
+   print('AfvalWijzer module start update (v'..ver..')')
    dprint('=== web update ================================')
    local sQuery	= 'curl "https://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode='..Postcode..'&street=&huisnummer='..Huisnummer..'&toevoeging" 2>nul'
    local handle=assert(io.popen(sQuery))
