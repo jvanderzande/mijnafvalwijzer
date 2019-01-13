@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
------------------------------------------------------------------------------------------------------------------
-ver="20190112-1345"
+----------------------------------------------------------------------------------------------------------------
+ver="20190112-1653"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -10,14 +10,10 @@ ver="20190112-1345"
 -- Link to WebSite:        http://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode=6137LP&street=&huisnummer=15&toevoeging
 -- The following information can also be saved to alvalwijzerconfig.lua to avoid having to update it each time, your choice :)
 --
--- load JSON lib
-JSON = require "JSON"     -- use generic JSON.lua
---~ JSON = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- Use default Domoticz JSON.lua
-
-myAfvalDevice='Container'           -- The Text devicename in Domoticz
+myAfvalDevice = 'Container'         -- The Text devicename in Domoticz
 ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
-Postcode='your-zip-here'            -- Your postalcode
-Huisnummer='your-housenr-here'      -- Your housnr
+Postcode = 'your-zip-here'          -- Your postalcode
+Huisnummer = 'your-housenr-here'    -- Your housnr
 NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
 Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
@@ -67,6 +63,31 @@ local nMON={"jan","feb","maa","apr","mei","jun","jul","aug","sep","okt","nov","d
 function dprint(text)
    if debug then print("@AFW:"..text) end
 end
+-------------------------------------------------------
+-- try to load JSON default library
+function loaddefaultjson()
+   if unexpected_condition then error() end
+   JSON = require "JSON"     -- use generic JSON.lua
+end
+-- try to load JSON.lua from the domoticz setup
+function loaddomoticzjson()
+   if unexpected_condition then error() end
+   JSON = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- Use default Domoticz JSON.lua
+end
+-- Load JSON.lua
+if pcall(loaddefaultjson) then
+   dprint('Loaded default JSON.lua.' )
+else
+   dprint('Failed loading default JSON.lua... trying /home/pi/domoticz/scripts/lua/JSON.lua' )
+   if pcall(loaddomoticzjson) then
+      dprint('Loaded JSON.lua.' )
+   else
+      print('@AFW Error: failed loading default JSON.lua and /home/pi/domoticz/scripts/lua/JSON.lua.')
+      print('@AFW Error: Please check your setup and try again.' )
+      return
+   end
+end
+-------------------------------------------------------
 -- FileExits
 function file_exists(name)
    local f=io.open(name,"r")
