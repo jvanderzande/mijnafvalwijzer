@@ -215,7 +215,6 @@ for avtype,get in pairs(afvaltype_cfg) do
       needupdate = true
    end
 end
-      needupdate = true
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
