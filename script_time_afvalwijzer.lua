@@ -9,11 +9,16 @@
 -- Link to WebSite:        http://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode=6137LP&street=&huisnummer=15&toevoeging
 -- The following information can also be saved to alvalwijzerconfig.lua to avoid having to update it each time, your choice :)
 --
-myAfvalDevice='Container'                                -- The Text devicename in Domoticz
-ShowNextEvents = 3                                       -- indicate the next x events to show in the TEXT Sensor in Domoticz
-Postcode='your-zip-here'                                 -- Your postalcode
-Huisnummer='your-housenr-here'                           -- Your housnr
-NotificationEmailAdress = "your-email-address(es)-here"  -- Specify your Email Address for the notifications
+-- load JSON lib
+JSON = require "JSON"     -- use generic JSON.lua
+--~ JSON = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- Use default Domoticz JSON.lua
+
+myAfvalDevice='Container'           -- The Text devicename in Domoticz
+ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
+Postcode='your-zip-here'            -- Your postalcode
+Huisnummer='your-housenr-here'      -- Your housnr
+NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
+Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 debug = false    -- get debug info in domoticz console/log
 -- date options:
@@ -73,6 +78,7 @@ if (file_exists("alvalwijzerconfig.lua")) then
 end
 -- load JSON lib
 JSON = require "JSON";
+--~ JSON = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()
 -- round function
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
@@ -135,8 +141,14 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
       notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
       notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-      commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-      dprint ('Notification send for ' .. s_afvaltype.. "  title:|"..notificationtitle.. "|  body:|"..notificationtext.."|")
+      if NotificationEmailAdress ~= "" then
+         commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+         dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      end
+      if Notificationsystem ~= "" then
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."###"..Notificationsystem
+         dprint ('Notification '..Notificationsystem..' send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      end
    end
 end
 
