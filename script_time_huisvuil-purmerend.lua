@@ -32,9 +32,9 @@ local debug = false  -- get debug info in domoticz console/log
 -- text       ==> define the text for the notification.
 local afvaltype_cfg = {
    ["Restafval"]              ={hour=19,min=22,daysbefore=1,text="Grijze Container met Restafval"},
-   ["GFT"]                    ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinfval"},
+   ["GFT"]                    ={hour=19,min=22,daysbefore=1,text="Bruine Container met Tuinfval"},
    ["Kerstbomen"]             ={hour=19,min=22,daysbefore=1,text="Kerstboom"},
-   ["Papier en karton"]       ={hour=19,min=22,daysbefore=1,text="Oud papier"},
+   ["Papier en karton"]       ={hour=19,min=22,daysbefore=1,text="Blauwe Container met Oud papier"},
    ["Dummy1"]                 ={hour=02,min=22,daysbefore=0,text="dummy"},   -- dummy is used to update the textsensor
    ["Dummy2"]                 ={hour=02,min=22,daysbefore=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
 --==== end of config ========================================================================================================================
