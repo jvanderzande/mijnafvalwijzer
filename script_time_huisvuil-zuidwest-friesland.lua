@@ -6,11 +6,12 @@
 -- based on script by nf999 @ http://www.domoticz.com/forum/viewtopic.php?f=61&t=17963&p=174908#p169637
 --
 -- Link to WebSite:  https://afvalkalender.sudwestfryslan.nl/adres/postcode:huisnr
-local myAfvalDevice='ZuidWestFrieslandAfval' -- Set to the TEXT sensor DeviceName from Domoticz
-local ShowNextEvents = 3                     -- indicate the next events to show in the TEXT Sensor in Domoticz
-local Postcode='xxxxnn'
-local Housenr='nn'
-local NotificationEmailAdress = "your@email.com"  -- Set to the Notification EmailAddress
+myAfvalDevice = 'ZuidWestFrieslandAfval' -- Set to the TEXT sensor DeviceName from Domoticz
+ShowNextEvents = 3                       -- indicate the next events to show in the TEXT Sensor in Domoticz
+Postcode = 'your-zip-here'               -- Your postalcode
+Housenr = 'your-housenr-here'            -- Your housnr
+NotificationEmailAdress = ""             -- Specify your Email Address for the notifications. Leave empty to skip email notification
+Notificationsystem = ""                  -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
 -- @DAG@ = Will be replaced by (vandaag/morgen/over x dagen)
@@ -33,8 +34,8 @@ local afvaltype_cfg = {
    ["GFT"]                    ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinfval"},
    ["Kerstbomen"]             ={hour=19,min=22,daysbefore=1,text="Kerstboom"},
    ["Papier en karton"]       ={hour=19,min=22,daysbefore=1,text="Oud papier"},
-   ["Dummy1"]                 ={hour=10,min=01,daysbefore=0,text="dummy"},   -- dummy is used to update the textsensor at night for that day
-   ["Dummy"]                  ={hour=02,min=22,daysbefore=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
+   ["Dummy1"]                 ={hour=02,min=22,daysbefore=0,text="dummy"},   -- dummy is used to update the textsensor
+   ["Dummy2"]                 ={hour=02,min=22,daysbefore=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
 --==== end of config ========================================================================================================================
 
 -- General conversion tables
@@ -54,13 +55,13 @@ function os.capture(cmd, rep)  -- execute command to get site
    local r = rep or 1
    local s = ""
    while ( s == "" and r > 0) do
-     r = r-1
-     local f = assert(io.popen(cmd, 'r'))
-     s = assert(f:read('*a'))
-     f:close()
+      r = r-1
+      local f = assert(io.popen(cmd, 'r'))
+      s = assert(f:read('*a'))
+      f:close()
    end
    if ( rep - r > 1 ) then
-     print("os.capture needed more than 1 call: " .. rep-r)
+      print("os.capture needed more than 1 call: " .. rep-r)
    end
   return s
 end
@@ -76,14 +77,14 @@ function getdaysdiff(i_afvaltype_date)
    if i_afvaltype_date == "vandaag" then
      -- use the set todays info
    else
-     -- Get day and month from the webdate found
-     afvalday, s_afvalmonth=i_afvaltype_date:match("%a- (%d+) (%a+)")
-     if (afvalday == nil or s_afvalmonth == nil) then
-       print ('! AF-WFR: No valid date found in i_afvaltype_date: ' .. i_afvaltype_date)
-       return
-     end
+      -- Get day and month from the webdate found
+      afvalday, s_afvalmonth=i_afvaltype_date:match("%a- (%d+) (%a+)")
+      if (afvalday == nil or s_afvalmonth == nil) then
+         print ('@AF-WFR error: No valid date found in i_afvaltype_date: ' .. i_afvaltype_date)
+         return
+      end
      -- translate the month name to the month number
-     afvalmonth = MON[s_afvalmonth]
+      afvalmonth = MON[s_afvalmonth]
    end
    dprint("...gerd-> afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
    --
@@ -98,24 +99,30 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
    and timenow.hour==afvaltype_cfg[s_afvaltype].hour
    and timenow.min==afvaltype_cfg[s_afvaltype].min
    and i_daysdifference == afvaltype_cfg[s_afvaltype].daysbefore then
-     dag = ""
-     if afvaltype_cfg[s_afvaltype].daysbefore == 0 then
-       dag = "vandaag"
-     elseif afvaltype_cfg[s_afvaltype].daysbefore == 1 then
-       dag = "morgen"
-     else
-       dag = "over " .. tostring(afvaltype_cfg[s_afvaltype].daysbefore) .. " dagen"
-     end
-     notificationtitle = notificationtitle:gsub('@DAG@',dag)
-     notificationtitle = notificationtitle:gsub('@AFVALTYPE@',s_afvaltype)
-     notificationtitle = notificationtitle:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
-     notificationtitle = notificationtitle:gsub('@AFVALDATE@',s_afvaltype_date)
-     notificationtext = notificationtext:gsub('@DAG@',dag)
-     notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
-     notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
-     notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-     commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-     dprint ('AF-WFR Notification send for ' .. s_afvaltype.. "  title:|"..notificationtitle.. "|  body:|"..notificationtext.."|")
+      dag = ""
+      if afvaltype_cfg[s_afvaltype].daysbefore == 0 then
+         dag = "vandaag"
+      elseif afvaltype_cfg[s_afvaltype].daysbefore == 1 then
+         dag = "morgen"
+      else
+         dag = "over " .. tostring(afvaltype_cfg[s_afvaltype].daysbefore) .. " dagen"
+      end
+      notificationtitle = notificationtitle:gsub('@DAG@',dag)
+      notificationtitle = notificationtitle:gsub('@AFVALTYPE@',s_afvaltype)
+      notificationtitle = notificationtitle:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
+      notificationtitle = notificationtitle:gsub('@AFVALDATE@',s_afvaltype_date)
+      notificationtext = notificationtext:gsub('@DAG@',dag)
+      notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
+      notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
+      notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
+      if NotificationEmailAdress ~= "" then
+         commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+         dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      end
+      if Notificationsystem ~= "" then
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."###"..Notificationsystem
+         dprint ('Notification '..Notificationsystem..' send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      end
    end
 end
 
@@ -128,17 +135,19 @@ function Perform_Update()
    dprint(commando)
    local tmp = os.capture(commando, 5)
    if ( tmp == "" ) then
-     print("! AF-WFR: Empty result from curl command, skipping run.")
-     return
+      print("@AF-WFR error: Empty result from curl command, skipping run.")
+      return
    else
 --~       dprint("website data tmp="..tmp)
    end
    -- Retrieve part with the dates for pickup
---~    tmp=tmp:match('.-<div id="Afvalkalender1_pnlAfvalKalender">(.-)</div>')
-   tmp=tmp:match('.-<h1>Wanneer</h1>.-<ul id="ophaaldata" class="line">(.-)</div>')
-   dprint("!================================================================")
-   dprint("! Stripped data tmp="..tmp)
-   dprint("!================================================================")
+   tmp=tmp:match('.-<ul id="ophaaldata" class="line">(.-)</div>')
+   if tmp == nil or tmp == "" then
+      print('@AF-WFR error: Unable to find the part for "ophaaldata" stpping script.')
+      return
+   else
+--~    dprint("! Stripped data tmp="..tmp)
+   end
    dprint("- start looping through received data -----------------------------------------------------------")
    local web_afvaltype=""
    local web_afvaldate=""
@@ -148,44 +157,49 @@ function Perform_Update()
 --   Loop through all dates
 --~    for web_afvaldate, web_afvaltype in string.gmatch(tmp, '<td>.-%s(.-)</td><td>(.-)</td>') do
    for web_afvaltype, web_afvaldate in string.gmatch(tmp, 'alt="(.-)".-<i class="date">(.-)</i>') do
-     if web_afvaltype~= nil and web_afvaldate ~= nil then
-       -- first match for each Type we save the date to capture the first next dates
-       dprint(web_afvaltype,web_afvaldate)
-       if afvaltype_cfg[web_afvaltype] ~= nil then
-         -- check whether the first nextdate for this afvaltype is already found
-         if afvaltype_cfg[web_afvaltype].nextdate == nil then
-            dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
-            daysdiffdev = getdaysdiff(web_afvaldate)
-            -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
-            if daysdiffdev == nil then
-               dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
-            elseif daysdiffdev >= 0 then
-              -- Set the nextdate for this afvaltype
-              afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
-              -- fill the text with the next defined number of events
-              if cnt < ShowNextEvents then
-                txt = txt..web_afvaldate .. "=" .. web_afvaltype .. "\r\n"
-                cnt=cnt+1
-              end
+      if web_afvaltype~= nil and web_afvaldate ~= nil then
+         -- first match for each Type we save the date to capture the first next dates
+         dprint(web_afvaltype,web_afvaldate)
+         if afvaltype_cfg[web_afvaltype] ~= nil then
+            -- check whether the first nextdate for this afvaltype is already found
+            if afvaltype_cfg[web_afvaltype].nextdate == nil then
+               dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
+               daysdiffdev = getdaysdiff(web_afvaldate)
+               -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
+               if daysdiffdev == nil then
+                  dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
+               elseif daysdiffdev >= 0 then
+                  -- Set the nextdate for this afvaltype
+                  afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
+                  -- fill the text with the next defined number of events
+                  if cnt < ShowNextEvents then
+                     txt = txt..web_afvaldate .. "=" .. web_afvaltype .. "\r\n"
+                     cnt=cnt+1
+                  end
+               end
+               notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
             end
-            notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
+         else
+            print ('@AF-WFR error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
          end
-       else
-         print ('! AF-WFR: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
-       end
-     end
+      end
    end
    dprint("-End   --------------------------------------------------------------------------------------------")
    if (cnt==0) then
-     print ('! AF-WFR: No valid data found in returned webdata.  skipping the rest of the logic.')
+     print ('@AF-WFR error: No valid data found in returned webdata.  skipping the rest of the logic.')
      return
    end
+   print ('@AFW: Found:'..txt:gsub('\r\n', ' ; '))
    -- always update the domoticz device so one can see it is updating and when it was ran last.
-   commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
-   if (otherdevices[myAfvalDevice] ~= txt) then
-     print ('AF-WFR: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
+   if otherdevices_idx == nil or otherdevices_idx[myAfvalDevice] == nil then
+      print ("@AF-WFR Error: Couldn't get the current data from Domoticz text device "..myAfvalDevice )
    else
-     print ('AF-WFR: No updated text for TxtDevice.')
+      commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
+      if (otherdevices[myAfvalDevice] ~= txt) then
+         print ('@AF-WFR: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
+      else
+         print ('@AF-WFR: No updated text for TxtDevice.')
+      end
    end
 end
 
