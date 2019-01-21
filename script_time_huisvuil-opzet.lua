@@ -38,7 +38,7 @@ local afvaltype_cfg = {
 --==== end of config ======================================================================================================
 
 -- General conversion tables
-local MON={jan=1,feb=2,maa=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
+local MON={jan=1,feb=2,mrt=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
 
 -- round
 function Round(num, idp)
@@ -83,6 +83,10 @@ function getdaysdiff(i_afvaltype_date)
          return
       end
       afvalmonth = MON[s_afvalmonth]
+      if afvalmonth == nil then
+         print ('@AFOpzet Error: No valid month found for abbreviation: ' .. s_afvalmonth..' adapt the line: "local MON={" to correct it.')
+         return 0
+      end
    end
    dprint("...gerd-> afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
    --
