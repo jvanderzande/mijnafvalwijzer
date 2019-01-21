@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- huisvuilkalender script: script_time_opzet.lua used for gemeentes using  http://www.opzet.nl/afvalkalender_digitaal
 ----------------------------------------------------------------------------------------------------------------
-ver="20190115-1100"
+ver="20190121-2100"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
