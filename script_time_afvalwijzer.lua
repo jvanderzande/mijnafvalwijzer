@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20190112-1653"
+ver="20190207-1100"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -179,7 +179,11 @@ function Perform_Update()
    local handle=assert(io.popen(sQuery))
    local jresponse = handle:read('*all')
    handle:close()
-   --~ print(jresponse)
+   -- strip bulk data from "ophaaldagenNext" till the end, because this is causing some errors for some gemeentes
+   jresponse=jresponse:match('(.-),\"ophaaldagenNext\":')
+   jresponse=jresponse.."}}"
+   --
+--~    print(jresponse)
    if ( jresponse == "" ) then
       print("@AFW Error: Empty result from curl command")
       return
@@ -294,6 +298,8 @@ for avtype,get in pairs(afvaltype_cfg) do
       needupdate = true
    end
 end
+-- Always update when debugging
+if debug then needupdate = true end
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
