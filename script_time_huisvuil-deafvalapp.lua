@@ -1,7 +1,10 @@
 -----------------------------------------------------------------------------------------------------------------
 -- huisvuilkalender script: script_time_echt.lua used for gemeentes Echt-Susteren
+-- Mogelijk ook voor deze volgens de deafvalapp.nl website: Bergeijk,Bladel,Boekel,Boxmeer,Buren,Cuijk,Culemborg,
+--  Echt-Susteren,Eersel,Geldermalsen,Grave,Helmond,Lingewaal,Maasdriel,Mill en Sint Hubert,Neder-BetuweNeerijnen,
+--  Oirschot,Reusel-De Mierden,Sint Anthonis,Someren,Son en Breugel,Terneuzen,Tiel,West Maas en Waal,Zaltbommel
 ----------------------------------------------------------------------------------------------------------------
-ver="20190209-1800"
+ver="20190210-1400"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -29,9 +32,10 @@ local debug = false  -- get debug info in domoticz console/log
 local afvaltype_cfg = {
    ["REST"]              ={hour=19,min=02,daysbefore=1,reminder=0,text="Container met Restafval"},
    ["GFT"]               ={hour=19,min=02,daysbefore=1,reminder=0,text="Container met Tuinfval"},
+   ["PAPIER"]            ={hour=19,min=02,daysbefore=1,reminder=0,text="PAPIER"},
    ["PLASTIC"]           ={hour=19,min=02,daysbefore=1,reminder=0,text="Plastic"},
    ["SNOEIAFVAL"]        ={hour=19,min=02,daysbefore=1,reminder=0,text="Snoei afval"},
-   ["KERSTBOOM"]         ={hour=19,min=22,daysbefore=1,reminder=0,text="Kerstbomen"},
+   ["KERSTBOOM"]         ={hour=19,min=02,daysbefore=1,reminder=0,text="Kerstbomen"},
    ["Dummy1"]            ={hour=02,min=02,daysbefore=0,reminder=0,text="dummy"},   -- dummy is used to force update while testing
    ["Dummy2"]            ={hour=02,min=02,daysbefore=0,reminder=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
 -- Define the Notification Title and body text. there are 3 variables you can include:
@@ -146,6 +150,7 @@ function Perform_Update()
    dprint("- start looping through received data -----------------------------------------------------------")
    local web_afvaltype = ""
    local web_afvaldate = ""
+   local missingtype = ""
    local missingrecords = ""
    local txt = ""
    local i = 0
@@ -165,15 +170,18 @@ function Perform_Update()
                if afvaltype_cfg[web_afvaltype] ~= nil and afvaltype_cfg[web_afvaltype].daysbefore ~= nil then
                   -- check if notification needs to be send
                   notification(web_afvaltype,web_afvaldate,daysdiffdev)
+                  -- save next collection in the table and move to the next afvaltype
+                  afvaltype_cfg[web_afvaltype].nextcollection = web_afvaldate
+                  afvaltype_cfg[web_afvaltype].nextdaysdiffdev = daysdiffdev
+                  i=i+1
+                  OphaalMomenten[i] = {diff=daysdiffdev,text=web_afvaltype .. "-" .. web_afvaldate}
                else
-                  print ('@AFEcht Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
-                  missingrecords = missingrecords .. '   ["' .. web_afvaltype..'"]'..string.rep(" ", 32-string.len(web_afvaltype))..' ={hour=19,min=22,daysbefore=1,reminder=0,text="'..web_afvaltype..'"},\n'
+                  if web_afvaltype ~= missingtype then
+                     print ('@AFEcht Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
+                     missingrecords = missingrecords .. '   ["' .. web_afvaltype..'"]'..string.rep(" ", 17-string.len(web_afvaltype))..' ={hour=19,min=02,daysbefore=1,reminder=0,text="'..web_afvaltype..'"},\n'
+                     missingtype = web_afvaltype
+                  end
                end
-               -- save next collection in the table and move to the next afvaltype
-               afvaltype_cfg[web_afvaltype].nextcollection = web_afvaldate
-               afvaltype_cfg[web_afvaltype].nextdaysdiffdev = daysdiffdev
-               i=i+1
-               OphaalMomenten[i] = {diff=daysdiffdev,text=web_afvaltype .. "-" .. web_afvaldate}
             end
          end
       end
