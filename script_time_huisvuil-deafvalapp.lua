@@ -21,7 +21,7 @@ NotificationEmailAdress = ""     -- Specify your Email Address for the notificat
 Notificationsystem = "telegram"  -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- Switch on Debugging in case of issues => set to true/false=======
-local debug = false  -- get debug info in domoticz console/log
+local debug = true  -- get debug info in domoticz console/log
 
 -- define a line for each afvaltype_cfg retuned by the webrequest:
    -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
