@@ -18,6 +18,9 @@ This script is for the site huisvuilkalender.gemeentewestland.nl for the gemeent
 # huisvuil-zuidlimburg (RD4)
 This script is for the site www.rd4info.nl for the gemeentes in Zuid Limburg.
 
+# huisvuil-echt
+This script is for the site deafvalapp.nl for the gemeente Echt-Susteren.
+
 # Obsolete:
 <b>huisvuil-purmerend</b>
 (Please use script_time_huisvuil_opzet.lua going forward)
