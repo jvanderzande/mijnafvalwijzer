@@ -31,7 +31,7 @@ local debug = true  -- get debug info in domoticz console/log
    -- text       ==> define the text for the notification.
 local afvaltype_cfg = {
    ["REST"]              ={hour=19,min=02,daysbefore=1,reminder=0,text="Container met Restafval"},
-   ["GFT"]               ={hour=19,min=02,daysbefore=1,reminder=0,text="Container met Tuinfval"},
+   ["GFT"]               ={hour=19,min=02,daysbefore=1,reminder=0,text="Container met Tuinafval"},
    ["PAPIER"]            ={hour=19,min=02,daysbefore=1,reminder=0,text="PAPIER"},
    ["PLASTIC"]           ={hour=19,min=02,daysbefore=1,reminder=0,text="Plastic"},
    ["SNOEIAFVAL"]        ={hour=19,min=02,daysbefore=1,reminder=0,text="Snoei afval"},

@@ -22,7 +22,7 @@ Notificationsystem = ""             -- Specify notification system eg "telegram/
 
 --~ afvaltype_cfg = {
 --~ 	["restafval"]     ={hour=19,min=01,daysbefore=1,reminder=0,text="Grijze Container met Restafval"},
---~ 	["gft"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="Groene Container met Tuinfval"},
+--~ 	["gft"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="Groene Container met Tuinafval"},
 --~ 	["pmd"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="Oranje Container met Plastic en Metalen"},
 --~ 	["kerstbomen"]    ={hour=19,min=01,daysbefore=1,reminder=0,text="Kerstbomen"},
 --~ 	["takken"]        ={hour=19,min=01,daysbefore=1,reminder=0,text="snoeiafval"},
