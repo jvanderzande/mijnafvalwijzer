@@ -35,6 +35,14 @@ local afvaltype_cfg = {
    ["Kerstbomen"]                       ={hour=19,min=22,daysbefore=1,reminder=0,text="Kerstbomen"},
    ["Dummy1"]                           ={hour=02,min=02,daysbefore=0,reminder=0,text="dummy"},   -- dummy is used to force update while testing
    ["Dummy2"]                           ={hour=02,min=02,daysbefore=0,reminder=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
+
+-- Define the Notification Title and body text. there are 3 variables you can include:
+-- @DAG@ = Will be replaced by (vandaag/morgen/over x dagen)
+-- @AFVALTYPE@ = Will be replaced by the AfvalType found on the internet
+-- @AFVALTEXT@ = Will be replaced by the content of the text field for the specific AfvalType in afvaltype_cfg
+-- @AFVALDATE@ = Will be replaced by the pickup date found on the internet
+notificationtitle = '@AFW: @DAG@ de @AFVALTEXT@ aan de weg zetten!'
+notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 --==== end of config ======================================================================================================
 
 -- General conversion tables
