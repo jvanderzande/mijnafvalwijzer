@@ -18,8 +18,10 @@ This script is for the site huisvuilkalender.gemeentewestland.nl for the gemeent
 # huisvuil-zuidlimburg (RD4)
 This script is for the site www.rd4info.nl for the gemeentes in Zuid Limburg.
 
-# huisvuil-echt
-This script is for the site deafvalapp.nl for the gemeente Echt-Susteren.
+# huisvuil-deafvalapp
+This script is for the site deafvalapp.nl for the gemeentes Bergeijk, Bladel, Boekel, Boxmeer, Buren, Cuijk, Culemborg,
+Echt-Susteren, Eersel, Geldermalsen, Grave,Helmond, Lingewaal, Maasdriel, Mill en Sint Hubert, Neder-BetuweNeerijnen,
+Oirschot, Reusel-De Mierden, Sint Anthonis, Someren, Son en Breugel, Terneuzen, Tiel, West Maas en Waal, Zaltbommel.
 
 # Obsolete:
 <b>huisvuil-purmerend</b>
