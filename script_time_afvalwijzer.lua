@@ -41,6 +41,7 @@ afvaltype_cfg = {
    ["restafval"]     ={hour=19,min=01,daysbefore=1,reminder=0,text="Grijze Container met Restafval"},
    ["gft"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="Groene Container met Tuinafval"},
    ["pmd"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="Oranje Container met Plastic en Metalen"},
+   ["kca"]           ={hour=19,min=01,daysbefore=1,reminder=0,text="kca"},
    ["kerstbomen"]    ={hour=19,min=01,daysbefore=1,reminder=0,text="Kerstbomen"},
    ["takken"]        ={hour=19,min=01,daysbefore=1,reminder=0,text="snoeiafval"},
    ["papier"]        ={hour=12,min=05,daysbefore=0,reminder=0,text="Blauwe Container met Oud papier"},
@@ -130,7 +131,7 @@ function getdaysdiff(i_afvaltype_date, stextformat)
    end
    local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
    local daysoftheweek={"Zon","Maa","Din","Woe","Don","Vri","Zat"}
-   local wday=daysoftheweek[os.date("*t").wday]
+   local wday=daysoftheweek[os.date("*t", afvalTime).wday]
    stextformat = stextformat:gsub('wd',wday)
    stextformat = stextformat:gsub('dd',afvalday)
    stextformat = stextformat:gsub('mmm',nMON[tonumber(afvalmonth)])
