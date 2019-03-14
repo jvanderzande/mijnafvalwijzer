@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20190207-1100"
+ver="20190314-1145"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -15,10 +15,11 @@ ShowNextEvents = 3                  -- indicate the next x events to show in the
 Postcode = 'your-zip-here'          -- Your postalcode
 Huisnummer = 'your-housenr-here'    -- Your housnr
 NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
-Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
+Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/gcm/http/kodi/lms/nma/prowl/pushalot/pushbullet/pushsafer" leave empty to skip
 
 debug = false    -- get debug info in domoticz console/log
 -- date options:
+--    wd  = weekday in 3 characters   eg Zon;Maa;Din
 --    dd  = day in 2 digits   eg 31
 --    mm  = month in 2 digits eg 01
 --    mmm = month abbreviation in 3 characters eg : jan
@@ -26,7 +27,7 @@ debug = false    -- get debug info in domoticz console/log
 --    yyyy = year in 4 digits eg 2019
 -- Afvaltype description options
 --    sdesc = short afvaltype description from Website  eg pmd
---    ldesc = LOng afvaltype description from Website   eg Plastic, Metalen en Drankkartons
+--    ldesc = Long afvaltype description from Website   eg Plastic, Metalen en Drankkartons
 textformat = "dd mmm yy ldesc"
 
 -- ### define a line for each afvaltype_cfg retuned by the webrequest:
@@ -128,6 +129,9 @@ function getdaysdiff(i_afvaltype_date, stextformat)
       return
    end
    local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
+   local daysoftheweek={"Zon","Maa","Din","Woe","Don","Vri","Zat"}
+   local wday=daysoftheweek[os.date("*t").wday]
+   stextformat = stextformat:gsub('wd',wday)
    stextformat = stextformat:gsub('dd',afvalday)
    stextformat = stextformat:gsub('mmm',nMON[tonumber(afvalmonth)])
    stextformat = stextformat:gsub('mm',afvalmonth)
