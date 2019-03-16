@@ -170,8 +170,8 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
          dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
       end
       if Notificationsystem ~= "" then
-         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."###"..Notificationsystem
-         dprint ('Notification '..Notificationsystem..' send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem
+         dprint ('Notification send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem)
       end
    end
 end
