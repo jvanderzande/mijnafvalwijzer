@@ -4,13 +4,14 @@
 --  Echt-Susteren,Eersel,Geldermalsen,Grave,Helmond,Lingewaal,Maasdriel,Mill en Sint Hubert,Neder-BetuweNeerijnen,
 --  Oirschot,Reusel-De Mierden,Sint Anthonis,Someren,Son en Breugel,Terneuzen,Tiel,West Maas en Waal,Zaltbommel
 ----------------------------------------------------------------------------------------------------------------
-ver="20190210-1400"
+ver="20190503-1340"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
 -- Check forumtopic:       https://www.domoticz.com/forum/viewtopic.php?f=61&t=17963
 -- Check source updates:   https://github.com/jvanderzande/mijnafvalwijzer
 -- Link to WebSite:        http://dataservice.deafvalapp.nl/dataservice/DataServiceServlet?service=OPHAALSCHEMA&land=NL&postcode=999AA&straatId=0&huisnr=999
+-- The following information can also be saved to alvalwijzerconfig.lua to avoid having to update it each time, your choice :)
 --
 myAfvalDevice = 'Container'      -- The Text devicename in Domoticz
 ShowNextEvents = 3               -- indicate the next x events to show in the TEXT Sensor in Domoticz
@@ -51,6 +52,16 @@ notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 local MON={jan=1,feb=2,mrt=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
 
 -- round
+-- FileExits
+function file_exists(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+-- check if Userconfig file exists and include that when it does.
+if (file_exists("alvalwijzerconfig.lua")) then
+   dofile("alvalwijzerconfig.lua")
+   print("@AFOpzet: Using user config file: alvalwijzerconfig.lua")
+end
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
 end
