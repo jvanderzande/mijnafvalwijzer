@@ -8,7 +8,6 @@ ver="20190314-1145"
 -- Check forumtopic:       https://www.domoticz.com/forum/viewtopic.php?f=61&t=17963
 -- Check source updates:   https://github.com/jvanderzande/mijnafvalwijzer
 -- Link to WebSite:        http://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode=6137LP&street=&huisnummer=15&toevoeging
--- The following information can also be saved to alvalwijzerconfig.lua to avoid having to update it each time, your choice :)
 --
 myAfvalDevice = 'Container'         -- The Text devicename in Domoticz
 ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
@@ -90,16 +89,6 @@ else
    end
 end
 -------------------------------------------------------
--- FileExits
-function file_exists(name)
-   local f=io.open(name,"r")
-   if f~=nil then io.close(f) return true else return false end
-end
--- check if Userconfig file exists and include that when it does.
-if (file_exists("alvalwijzerconfig.lua")) then
-   dofile("alvalwijzerconfig.lua")
-   dprint("Using user config file: alvalwijzerconfig.lua")
-end
 -- round function
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
