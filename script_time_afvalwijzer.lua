@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20190314-1145"
+ver="20190605-1340"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -14,19 +14,23 @@ ShowNextEvents = 3                  -- indicate the next x events to show in the
 Postcode = 'your-zip-here'          -- Your postalcode
 Huisnummer = 'your-housenr-here'    -- Your housnr
 NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
+--NotificationEmailAdress = {"",""} -- Specify multiple Email Addresses for the notifications. Leave empty to skip email notification
 Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/gcm/http/kodi/lms/nma/prowl/pushalot/pushbullet/pushsafer" leave empty to skip
 
-debug = false    -- get debug info in domoticz console/log
--- date options:
---    wd  = weekday in 3 characters   eg Zon;Maa;Din
---    dd  = day in 2 digits   eg 31
---    mm  = month in 2 digits eg 01
---    mmm = month abbreviation in 3 characters eg : jan
---    yy   = year in 2 digits eg 19
---    yyyy = year in 4 digits eg 2019
--- Afvaltype description options
---    sdesc = short afvaltype description from Website  eg pmd
---    ldesc = Long afvaltype description from Website   eg Plastic, Metalen en Drankkartons
+-- Switch on Debugging in case of issues => set to true/false=======
+debug = false
+
+-- ### define format for text device
+   -- date options:
+   --    wd  = weekday in 3 characters   eg Zon;Maa;Din
+   --    dd  = day in 2 digits   eg 31
+   --    mm  = month in 2 digits eg 01
+   --    mmm = month abbreviation in 3 characters eg : jan
+   --    yy   = year in 2 digits eg 19
+   --    yyyy = year in 4 digits eg 2019
+   -- Afvaltype description options
+   --    sdesc = short afvaltype description from Website  eg pmd
+   --    ldesc = Long afvaltype description from Website   eg Plastic, Metalen en Drankkartons
 textformat = "dd mmm yy ldesc"
 
 -- ### define a line for each afvaltype_cfg retuned by the webrequest:
@@ -59,11 +63,14 @@ afvaltype_cfg = {
 notificationtitle = '@AFW: @DAG@ de @AFVALTEXT@ aan de weg zetten!'
 notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 --==== end of config ========================================================================================================================
+
+-- General conversion tables
 local nMON={"jan","feb","maa","apr","mei","jun","jul","aug","sep","okt","nov","dec"}
 -- debug print
 function dprint(text)
    if debug then print("@AFW:"..text) end
 end
+
 -------------------------------------------------------
 -- try to load JSON default library
 function loaddefaultjson()
@@ -154,10 +161,20 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
       notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
       notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-      if NotificationEmailAdress ~= "" then
-         commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-         dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      if type(NotificationEmailAdress) == 'table' then
+         for x,emailaddress in pairs(NotificationEmailAdress) do
+            if emailaddress ~= "" then
+               commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress
+               dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress.."|")
+            end
+         end
+      else
+         if NotificationEmailAdress ~= "" then
+            commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+            dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         end
       end
+
       if Notificationsystem ~= "" then
          commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem
          dprint ('Notification send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem)

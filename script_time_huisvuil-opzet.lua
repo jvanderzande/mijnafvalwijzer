@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- huisvuilkalender script: script_time_opzet.lua used for gemeentes using  http://www.opzet.nl/afvalkalender_digitaal
 ----------------------------------------------------------------------------------------------------------------
-ver="20190503-1340"
+ver="20190605-1340"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -9,14 +9,15 @@ ver="20190503-1340"
 -- Check source updates:   https://github.com/jvanderzande/mijnafvalwijzer
 -- Link to WebSite:        http://Hostname/rest/adressen/.....
 --
-myAfvalDevice = 'Container'      -- The Text devicename in Domoticz
-hostname = ""                    -- Specify the hostname of your afvalwebsite. eg: "afvalkalender.purmerend.nl", "afvalkalender.sudwestfryslan.nl", "mijnblink.nl" ..etc
-ShowNextEvents = 3               -- indicate the next x events to show in the TEXT Sensor in Domoticz
-Postcode = ''                    -- Postcode
-Housenr = ''                     -- Huisnummer zonder toevoeging
-Housenrtoev=''                   -- Huisnummer toevoeging
-NotificationEmailAdress = ""     -- Specify your Email Address for the notifications. Leave empty to skip email notification
-Notificationsystem = ""          -- Specify notification system eg "telegram/pushover/.." leave empty to skip
+myAfvalDevice = 'Container'         -- The Text devicename in Domoticz
+hostname = ""                       -- Specify the hostname of your afvalwebsite. eg: "afvalkalender.purmerend.nl", "afvalkalender.sudwestfryslan.nl", "mijnblink.nl" ..etc
+ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
+Postcode = ''                       -- Postcode
+Housenr = ''                        -- Huisnummer zonder toevoeging
+Housenrtoev=''                      -- Huisnummer toevoeging
+NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
+--NotificationEmailAdress = {"",""} -- Specify multiple Email Addresses for the notifications. Leave empty to skip email notification
+Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- Switch on Debugging in case of issues => set to true/false=======
 local debug = false  -- get debug info in domoticz console/log
@@ -43,19 +44,21 @@ local afvaltype_cfg = {
 -- @AFVALDATE@ = Will be replaced by the pickup date found on the internet
 notificationtitle = '@AFW: @DAG@ de @AFVALTEXT@ aan de weg zetten!'
 notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
---==== end of config ======================================================================================================
+--==== end of config ========================================================================================================================
 
 -- General conversion tables
 local MON={jan=1,feb=2,mrt=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
 
-function Round(num, idp)
-   return tonumber(string.format("%." ..(idp or 0).. "f", num))
-end
 -- debug print
 function dprint(text)
    if debug then print("@AFOpzet:"..text) end
 end
--- run curl and capture output
+
+-- round function
+function Round(num, idp)
+   return tonumber(string.format("%." ..(idp or 0).. "f", num))
+end
+-- run program and return captured output
 function os.capture(cmd, rep)  -- execute command to get site
    -- rep is nr of repeats if result is empty
    local r = rep or 1
@@ -69,7 +72,7 @@ function os.capture(cmd, rep)  -- execute command to get site
    if ( rep - r > 1 ) then
       print("os.capture needed more than 1 call: " .. rep-r)
    end
-  return s
+   return s
 end
 -- get days between today and provided date
 function getdaysdiff(i_afvaltype_date)
@@ -124,15 +127,24 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
       notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
       notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-      if NotificationEmailAdress ~= "" then
-         commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-         dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      if type(NotificationEmailAdress) == 'table' then
+         for x,emailaddress in pairs(NotificationEmailAdress) do
+            if emailaddress ~= "" then
+               commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress
+               dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress.."|")
+            end
+         end
+      else
+         if NotificationEmailAdress ~= "" then
+            commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+            dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         end
       end
+
       if Notificationsystem ~= "" then
-         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."###"..Notificationsystem
-         dprint ('Notification '..Notificationsystem..' send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem
+         dprint ('Notification send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem)
       end
-      dprint ('AFOpzet Notification send for ' .. s_afvaltype.. "  title:|"..notificationtitle.. "|  body:|"..notificationtext.."|")
    end
 end
 
@@ -217,6 +229,7 @@ commandArray = {}
 timenow = os.date("*t")
 
 -- check for notification times and run update only when we are at one of these defined times
+dprint('Opzet Afval module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
    dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
@@ -226,6 +239,8 @@ for avtype,get in pairs(afvaltype_cfg) do
       needupdate = true
    end
 end
+-- Always update when debugging
+if debug then needupdate = true end
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
