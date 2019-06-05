@@ -4,25 +4,25 @@
 --  Echt-Susteren,Eersel,Geldermalsen,Grave,Helmond,Lingewaal,Maasdriel,Mill en Sint Hubert,Neder-BetuweNeerijnen,
 --  Oirschot,Reusel-De Mierden,Sint Anthonis,Someren,Son en Breugel,Terneuzen,Tiel,West Maas en Waal,Zaltbommel
 ----------------------------------------------------------------------------------------------------------------
-ver="20190503-1340"
+ver="20190605-1340"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
 -- Check forumtopic:       https://www.domoticz.com/forum/viewtopic.php?f=61&t=17963
 -- Check source updates:   https://github.com/jvanderzande/mijnafvalwijzer
 -- Link to WebSite:        http://dataservice.deafvalapp.nl/dataservice/DataServiceServlet?service=OPHAALSCHEMA&land=NL&postcode=999AA&straatId=0&huisnr=999
--- The following information can also be saved to alvalwijzerconfig.lua to avoid having to update it each time, your choice :)
 --
-myAfvalDevice = 'Container'      -- The Text devicename in Domoticz
-ShowNextEvents = 3               -- indicate the next x events to show in the TEXT Sensor in Domoticz
-Postcode = '9999AA'              -- Postcode
-Housenr = '99'                   -- Huisnummer zonder toevoeging
-Housenrtoev=''                   -- Huisnummer toevoeging
-NotificationEmailAdress = ""     -- Specify your Email Address for the notifications. Leave empty to skip email notification
-Notificationsystem = "telegram"  -- Specify notification system eg "telegram/pushover/.." leave empty to skip
+myAfvalDevice = 'Container'         -- The Text devicename in Domoticz
+ShowNextEvents = 3                  -- indicate the next x events to show in the TEXT Sensor in Domoticz
+Postcode = '9999AA'                 -- Postcode
+Housenr = '99'                      -- Huisnummer zonder toevoeging
+Housenrtoev=''                      -- Huisnummer toevoeging
+NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
+--NotificationEmailAdress = {"",""} -- Specify multiple Email Addresses for the notifications. Leave empty to skip email notification
+Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- Switch on Debugging in case of issues => set to true/false=======
-local debug = true  -- get debug info in domoticz console/log
+local debug = false  -- get debug info in domoticz console/log
 
 -- define a line for each afvaltype_cfg retuned by the webrequest:
    -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
@@ -51,25 +51,16 @@ notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 -- General conversion tables
 local MON={jan=1,feb=2,mrt=3,apr=4,mei=5,jun=6,jul=7,aug=8,sep=9,okt=10,nov=11,dec=12}
 
--- round
--- FileExits
-function file_exists(name)
-   local f=io.open(name,"r")
-   if f~=nil then io.close(f) return true else return false end
+-- debug print
+function dprint(text)
+   if debug then print("@AFdaa:"..text) end
 end
--- check if Userconfig file exists and include that when it does.
-if (file_exists("alvalwijzerconfig.lua")) then
-   dofile("alvalwijzerconfig.lua")
-   print("@AFOpzet: Using user config file: alvalwijzerconfig.lua")
-end
+
+-- round function
 function Round(num, idp)
    return tonumber(string.format("%." ..(idp or 0).. "f", num))
 end
--- debug print
-function dprint(text)
-   if debug then print("@AFEcht:"..text) end
-end
--- run curl and capture output
+-- run program and return captured output
 function os.capture(cmd, rep)  -- execute command to get site
    -- rep is nr of repeats if result is empty
    local r = rep or 1
@@ -83,7 +74,7 @@ function os.capture(cmd, rep)  -- execute command to get site
    if ( rep - r > 1 ) then
       print("os.capture needed more than 1 call: " .. rep-r)
    end
-  return s
+   return s
 end
 -- get days between today and provided date
 function getdaysdiff(i_afvaltype_date)
@@ -99,7 +90,7 @@ function getdaysdiff(i_afvaltype_date)
       --s_afvalmonth, afvalday=i_afvaltype_date:match("(%a-). (%d+), %d+")
       afvalday, afvalmonth, afvalyear=i_afvaltype_date:match("(%d-)-(%d-)-(%d+)$")
       if afvalmonth == nil then
-         print ('@AFEcht Error: No valid month found for abbreviation: ' .. s_afvalmonth..' adapt the line: "local MON={" to correct it.')
+         print ('@AFdaa Error: No valid month found for abbreviation: ' .. s_afvalmonth..' adapt the line: "local MON={" to correct it.')
          return 0
       end
    end
@@ -132,28 +123,37 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
       notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
       notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-      if NotificationEmailAdress ~= "" then
-         commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-         dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+      if type(NotificationEmailAdress) == 'table' then
+         for x,emailaddress in pairs(NotificationEmailAdress) do
+            if emailaddress ~= "" then
+               commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress
+               dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress.."|")
+            end
+         end
+      else
+         if NotificationEmailAdress ~= "" then
+            commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+            dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         end
       end
+
       if Notificationsystem ~= "" then
-         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."###"..Notificationsystem
-         dprint ('Notification '..Notificationsystem..' send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem
+         dprint ('Notification send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem)
       end
-      dprint ('AFEcht Notification send for ' .. s_afvaltype.. "  title:|"..notificationtitle.. "|  body:|"..notificationtext.."|")
    end
 end
 
 -- Do the actual update retrieving data from the website and processing it
 function Perform_Update()
-   print('@AFEcht module start check for '..Postcode.."-"..Housenr)
+   print('@AFdaa module start check for '..Postcode.."-"..Housenr)
    dprint('=== web update ================================')
    -- get data from the website
    local commando = "curl --max-time 5 -s \"http://dataservice.deafvalapp.nl/dataservice/DataServiceServlet?service=OPHAALSCHEMA&land=NL&postcode="..Postcode.."&straatId=0&huisnr="..Housenr..""..Housenrtoev.."\""
    dprint(commando)
    local tmp = os.capture(commando, 1)
    if ( tmp == "" ) then
-      print("@AFEcht Error: Empty result from curl command, skipping run.")
+      print("@AFdaa Error: Empty result from curl command, skipping run.")
       return
    else
       dprint("website data tmp="..tmp)
@@ -188,7 +188,7 @@ function Perform_Update()
                   OphaalMomenten[i] = {diff=daysdiffdev,text=web_afvaltype .. "-" .. web_afvaldate}
                else
                   if web_afvaltype ~= missingtype then
-                     print ('@AFEcht Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
+                     print ('@AFdaa Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype)
                      missingrecords = missingrecords .. '   ["' .. web_afvaltype..'"]'..string.rep(" ", 17-string.len(web_afvaltype))..' ={hour=19,min=02,daysbefore=1,reminder=0,text="'..web_afvaltype..'"},\n'
                      missingtype = web_afvaltype
                   end
@@ -222,19 +222,19 @@ function Perform_Update()
       print('#### -- end ----------------------------')
    end
    if (eventcnt==0) then
-      print ('@AFEcht Error: No valid data found in returned webdata.  skipping the rest of the logic.')
+      print ('@AFdaa Error: No valid data found in returned webdata.  skipping the rest of the logic.')
       return
    end
    -- always update the domoticz device so one can see it is updating and when it was ran last.
-   print ('@AFEcht Found: '..txt:gsub('\r\n', ' ; '))
+   print ('@AFdaa Found: '..txt:gsub('\r\n', ' ; '))
    if otherdevices_idx == nil or otherdevices_idx[myAfvalDevice] == nil then
-      print ("@AFEcht Error: Couldn't get the current data from Domoticz text device "..myAfvalDevice )
+      print ("@AFdaa Error: Couldn't get the current data from Domoticz text device "..myAfvalDevice )
    else
       commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
       if (otherdevices[myAfvalDevice] ~= txt) then
-         print ('@AFEcht: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
+         print ('@AFdaa: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
       else
-         print ('@AFEcht: No updated text for TxtDevice.')
+         print ('@AFdaa: No updated text for TxtDevice.')
       end
    end
 end
@@ -246,6 +246,7 @@ commandArray = {}
 timenow = os.date("*t")
 
 -- check for notification times and run update only when we are at one of these defined times
+dprint('DeAfvalApp module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
    dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
