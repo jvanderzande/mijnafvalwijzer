@@ -126,7 +126,7 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       if type(NotificationEmailAdress) == 'table' then
          for x,emailaddress in pairs(NotificationEmailAdress) do
             if emailaddress ~= "" then
-               commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress
+               commandArray[x] = {['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress}
                dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress.."|")
             end
          end

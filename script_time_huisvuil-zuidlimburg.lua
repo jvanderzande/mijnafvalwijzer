@@ -1,3 +1,8 @@
+-----------------------------------------------------------------------------------------------------------------
+-- huisvuilkalender script: script_time_huisvuil-zuidlimburg.lua used for the gemeentes in Zuid Limburg.
+-- This script is for the site www.rd4info.nl
+----------------------------------------------------------------------------------------------------------------
+ver="20190606-1730"
 --
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
@@ -6,11 +11,15 @@
 -- based on script by nf999 @ http://www.domoticz.com/forum/viewtopic.php?f=61&t=17963&p=174908#p169637
 --
 -- Link to WebSite:  https://www.rd4info.nl/NSI/Burger/Aspx/afvalkalender_public_text.aspx?pc=AAAA99&nr=999&t
-local myAfvalDevice='Afval Kalender'     -- Set to the TEXT sensor DeviceName from Domoticz
-local ShowNextEvents = 3                -- indicate the next events to show in the TEXT Sensor in Domoticz
-local Postcode='9999AA'
-local Housenr='111'
-local NotificationEmailAdress = "email@domain.nl"  -- Set to the Notification EmailAddress
+-- Link to WebSite:  https://github.com/jvanderzande/mijnafvalwijzer
+--
+myAfvalDevice='Afval Kalender'     -- Set to the TEXT sensor DeviceName from Domoticz
+ShowNextEvents = 3                 -- indicate the next events to show in the TEXT Sensor in Domoticz
+Postcode='9999AA'                  -- Postalcode
+Housenr='111'                      -- Huisnumber
+NotificationEmailAdress = {"",""}  -- Specify one or multiple Email Addresses for the notifications. Leave all empty to skip email notification
+Notificationsystem = ""            -- Specify notification system eg "telegram/pushover/.." leave empty to skip
+
 
 -- Define the Notification Title and body text. there are 3 variables you can include:
 -- @DAG@ = Will be replaced by (vandaag/morgen/over x dagen)
@@ -24,20 +33,21 @@ local notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 local debug = false  -- get debug info in domoticz console/log
 
 -- define a line for each afvaltype_cfg retuned by the webrequest:
--- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
--- daysbefore ==> 0 means that the notification is send on the day of the planned garbage collection
--- daysbefore ==> X means that the notification is send X day(s) before the day of the planned garbage collection
--- text       ==> define the text for the notification.
+   -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
+   -- daysbefore ==> 0 means that the notification is send on the day of the planned garbage collection
+   -- daysbefore ==> X means that the notification is send X day(s) before the day of the planned garbage collection
+   -- reminder   ==> Will send a second reminder after x hours. 0=no reminder (needs to be in the same day!)
+   -- text       ==> define the text for the notification.
 local afvaltype_cfg = {
-   ["Restafval"]              ={hour=19,min=22,daysbefore=1,text="Grijze Container met Restafval"},
-   ["GFT"]                    ={hour=19,min=22,daysbefore=1,text="Groene Container met Tuinafval"},
-   ["Kerstbomen"]             ={hour=19,min=00,daysbefore=1,text="Kerstboom"},
-   ["Oud papier"]             ={hour=12,min=00,daysbefore=0,text="Oud papier"},
-   ["BEST-tas"]               ={hour=19,min=22,daysbefore=1,text="BEST tas"},
-   ["PMD-afval"]              ={hour=19,min=22,daysbefore=1,text="PMD bak"},
-   ["Snoeiafval"]             ={hour=19,min=22,daysbefore=1,text="Snoeiafval"},
-   ["Snoeiafval op afspraak"] ={hour=12,min=00,daysbefore=3,text="Snoeiafval op afspraak"},
-   ["Dummy"]                  ={hour=21,min=17,daysbefore=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
+   ["Restafval"]              ={hour=19,min=22,daysbefore=1,reminder=0,text="Grijze Container met Restafval"},
+   ["GFT"]                    ={hour=19,min=22,daysbefore=1,reminder=0,text="Groene Container met Tuinafval"},
+   ["Kerstbomen"]             ={hour=12,min=00,daysbefore=1,reminder=0,text="Kerstboom"},
+   ["Oud papier"]             ={hour=12,min=00,daysbefore=0,reminder=0,text="Oud papier"},
+   ["BEST-tas"]               ={hour=19,min=22,daysbefore=1,reminder=0,text="BEST tas"},
+   ["PMD-afval"]              ={hour=19,min=22,daysbefore=1,reminder=0,text="PMD bak"},
+   ["Snoeiafval"]             ={hour=19,min=22,daysbefore=1,reminder=0,text="Snoeiafval"},
+   ["Snoeiafval op afspraak"] ={hour=12,min=00,daysbefore=3,reminder=0,text="Snoeiafval op afspraak"},
+   ["Dummy"]                  ={hour=21,min=17,daysbefore=0,reminder=0,text="dummy"}}   -- dummy is used to update the textsensor at night for that day
 --==== end of config ======================================================================================================
 
 -- General conversion tables
@@ -97,7 +107,7 @@ end
 function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
    dprint("...Noti-> i_daysdifference:"..tostring(i_daysdifference).."  afvaltype_cfg[s_afvaltype].daysbefore:"..tostring(afvaltype_cfg[s_afvaltype].daysbefore).."  hour:"..tostring(afvaltype_cfg[s_afvaltype].hour).."  min:"..tostring(afvaltype_cfg[s_afvaltype].min))
    if afvaltype_cfg[s_afvaltype] ~= nil
-   and timenow.hour==afvaltype_cfg[s_afvaltype].hour
+   and (timenow.hour==afvaltype_cfg[s_afvaltype].hour or timenow.hour==afvaltype_cfg[s_afvaltype].hour+afvaltype_cfg[s_afvaltype].reminder)
    and timenow.min==afvaltype_cfg[s_afvaltype].min
    and i_daysdifference == afvaltype_cfg[s_afvaltype].daysbefore then
       dag = ""
@@ -116,8 +126,25 @@ function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
       notificationtext = notificationtext:gsub('@AFVALTYPE@',s_afvaltype)
       notificationtext = notificationtext:gsub('@AFVALTEXT@',tostring(afvaltype_cfg[s_afvaltype].text))
       notificationtext = notificationtext:gsub('@AFVALDATE@',s_afvaltype_date)
-      commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
-      dprint ('AF-Hee Notification send for ' .. s_afvaltype.. "  title:|"..notificationtitle.. "|  body:|"..notificationtext.."|")
+      if type(NotificationEmailAdress) == 'table' then
+         for x,emailaddress in pairs(NotificationEmailAdress) do
+            if emailaddress ~= "" then
+               --commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress
+               commandArray[x]={['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress}
+               dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. emailaddress.."|")
+            end
+         end
+      else
+         if NotificationEmailAdress ~= "" then
+            commandArray['SendEmail'] = notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress
+            dprint ('Notification Email send for ' .. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '#' .. NotificationEmailAdress.."|")
+         end
+      end
+
+      if Notificationsystem ~= "" then
+         commandArray['SendNotification']=notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem
+         dprint ('Notification send for '.. s_afvaltype.. " |"..notificationtitle .. '#' .. notificationtext .. '####'..Notificationsystem)
+      end
    end
 end
 
@@ -176,6 +203,7 @@ function Perform_Update()
       return
    end
    -- always update the domoticz device so one can see it is updating and when it was ran last.
+   print ('@AF-Hee Found: '..txt:gsub('\r\n', ' ; '))
    commandArray['UpdateDevice'] = otherdevices_idx[myAfvalDevice] .. '|0|' .. txt
    if (otherdevices[myAfvalDevice] ~= txt) then
       print ('AF-Hee: Update device from: \n'.. otherdevices[myAfvalDevice] .. '\n replace with:\n' .. txt)
@@ -191,14 +219,18 @@ commandArray = {}
 timenow = os.date("*t")
 
 -- check for notification times and run update only when we are at one of these defined times
+dprint(' Afval module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
    dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
-   if timenow.hour==afvaltype_cfg[avtype].hour
+   if (timenow.hour==afvaltype_cfg[avtype].hour
+   or  timenow.hour==afvaltype_cfg[avtype].hour+afvaltype_cfg[avtype].reminder)
    and timenow.min==afvaltype_cfg[avtype].min then
       needupdate = true
    end
 end
+-- Always update when debugging
+if debug then needupdate = true end
 -- get information from website, update device and send notification when required
 if needupdate then
    Perform_Update()
