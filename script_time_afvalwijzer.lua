@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20190605-1340"
+ver="20191218-2100"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -190,19 +190,22 @@ function Perform_Update()
    local handle=assert(io.popen(sQuery))
    local jresponse = handle:read('*all')
    handle:close()
-   -- strip bulk data from "ophaaldagenNext" till the end, because this is causing some errors for some gemeentes
-   jresponse=jresponse:match('(.-),\"ophaaldagenNext\":')
-   jresponse=jresponse.."}}"
-   --
---~    print(jresponse)
    if ( jresponse == "" ) then
-      print("@AFW Error: Empty result from curl command")
+      print("@AFW Error: Empty result from curl command. Please check whether curl.exe is installed.")
       return
    end
    if ( jresponse:sub(1,3) == "NOK" ) then
       print("@AFW Error: Check your Postcode and Huisnummer as we get an NOK response.")
       return
    end
+   -- strip bulk data from "ophaaldagenNext" till the end, because this is causing some errors for some gemeentes
+   if ( jresponse:find('ophaaldagenNext')  == nil ) then
+      print("@AFW Error: returned information does not contain the ophaaldagenNext section. stopping process.")
+      return
+   end
+   jresponse=jresponse:match('(.-),\"ophaaldagenNext\":')
+   jresponse=jresponse.."}}"
+   --
    -- Decode JSON table
    decoded_response = JSON:decode(jresponse)
    rdata = decoded_response["data"]
