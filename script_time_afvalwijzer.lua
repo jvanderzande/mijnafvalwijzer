@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20191218-2100"
+ver="20191221-2200"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -203,7 +203,7 @@ function Perform_Update()
       print("@AFW Error: returned information does not contain the ophaaldagenNext section. stopping process.")
       return
    end
-   jresponse=jresponse:match('(.-),\"ophaaldagenNext\":')
+   jresponse=jresponse:match('(.-),\"mededelingen\":')
    jresponse=jresponse.."}}"
    --
    -- Decode JSON table
@@ -217,24 +217,24 @@ function Perform_Update()
    rdesc = rdata["langs"]
    rdesc = rdesc["data"]
    -- get the ophaaldagen tabel for the coming scheduled pickups
-   rdata = rdata["ophaaldagen"]
-   if type(rdata) ~= "table" then
+   rdataty = rdata["ophaaldagen"]
+   if type(rdataty) ~= "table" then
       print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
       return
    end
-   rdata = rdata["data"]
-   if type(rdata) ~= "table" then
+   rdataty = rdataty["data"]
+   if type(rdataty) ~= "table" then
       print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
       return
    end
    -- get the next number of ShowNextEvents
-   dprint("- start looping through received data -----------------------------------------------------------")
+   dprint("- start looping through this year received data -----------------------------------------------------------")
 --~    for i = 1, ShowNextEvents do
    local missingrecords=""
    local txt=""
    local txtcnt = 0
-   for i = 1, #rdata-1 do
-      record = rdata[i]
+   for i = 1, #rdataty do
+      record = rdataty[i]
       if type(record) == "table" then
          wnameType = record["nameType"]
          web_afvaltype = record["type"]
@@ -271,6 +271,64 @@ function Perform_Update()
          end
       end
    end
+---= Process next year data when needed at the end of the year  ============================================
+   if txtcnt < ShowNextEvents then
+      -- get the ophaaldagen tabel for next year when needed
+      rdataly = rdata["ophaaldagenNext"]
+      if type(rdataly) ~= "table" then
+         print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
+         return
+      end
+      rdataly = rdataly["data"]
+      if type(rdataly) ~= "table" then
+         print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
+         return
+      end
+      -- get the next number of ShowNextEvents
+      dprint("- start looping through next year received data -----------------------------------------------------------")
+   --~    for i = 1, ShowNextEvents do
+      for i = 1, #rdataly do
+         record = rdataly[i]
+         if type(record) == "table" then
+            wnameType = record["nameType"]
+            web_afvaltype = record["type"]
+            web_afvaldate = record["date"]
+            -- first match for each Type we save the date to capture the first next dates
+            if afvaltype_cfg[web_afvaltype] == nil then
+               print ('@AFW Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype.."  desc:"..wnameType)
+               missingrecords = missingrecords .. '   ["' .. web_afvaltype..'"]        ={hour=19,min=22,daysbefore=1,reminder=0,text="'..wnameType..'"},\n'
+               afvaltype_cfg[web_afvaltype] = {hour=0,min=0,daysbefore=0,reminder=0,text="dummy"}
+            else
+               -- check whether the first nextdate for this afvaltype is already found to get only one next date per AfvalType
+               if afvaltype_cfg[web_afvaltype].nextdate == nil and txtcnt < ShowNextEvents then
+                  -- get the long description from the JSON data
+                  dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
+                  local stextformat = textformat
+                  -- Get days diff
+                  stextformat, daysdiffdev = getdaysdiff(web_afvaldate, stextformat)
+                  -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
+                  if daysdiffdev == nil then
+                     dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
+                  elseif daysdiffdev >= 0 then
+                     -- Set the nextdate for this afvaltype
+                     afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
+                     -- fill the text with the next defined number of events
+                     if txtcnt < ShowNextEvents then
+                        stextformat = stextformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
+                        stextformat = stextformat:gsub('sdesc',web_afvaltype)
+                        txt = txt..stextformat.."\r\n"
+                        txtcnt = txtcnt + 1
+                     end
+                     notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
+                  end
+               end
+            end
+         end
+      end
+   end
+----------------------------------------------------------------------------------------------------
+
+
    dprint("-End   --------------------------------------------------------------------------------------------")
    if missingrecords ~= "" then
       print('#### -- start -- Add these records to local afvaltype_cfg = {')
