@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20191221-2200"
+ver="20191221-2300"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -184,111 +184,13 @@ end
 
 -- Do the actual update retrieving data from the website and processing it
 function Perform_Update()
-   print('AfvalWijzer module start update (v'..ver..')')
-   dprint('=== web update ================================')
-   local sQuery	= 'curl "https://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode='..Postcode..'&street=&huisnummer='..Huisnummer..'&toevoeging" 2>nul'
-   local handle=assert(io.popen(sQuery))
-   local jresponse = handle:read('*all')
-   handle:close()
-   if ( jresponse == "" ) then
-      print("@AFW Error: Empty result from curl command. Please check whether curl.exe is installed.")
-      return
-   end
-   if ( jresponse:sub(1,3) == "NOK" ) then
-      print("@AFW Error: Check your Postcode and Huisnummer as we get an NOK response.")
-      return
-   end
-   -- strip bulk data from "ophaaldagenNext" till the end, because this is causing some errors for some gemeentes
-   if ( jresponse:find('ophaaldagenNext')  == nil ) then
-      print("@AFW Error: returned information does not contain the ophaaldagenNext section. stopping process.")
-      return
-   end
-   jresponse=jresponse:match('(.-),\"mededelingen\":')
-   jresponse=jresponse.."}}"
-   --
-   -- Decode JSON table
-   decoded_response = JSON:decode(jresponse)
-   rdata = decoded_response["data"]
-   if type(rdata) ~= "table" then
-      print("@AFW: Empty data table in JSON data...  stopping execution.")
-      return
-   end
-   -- get the description records into rdesc to retrieve the long description
-   rdesc = rdata["langs"]
-   rdesc = rdesc["data"]
-   -- get the ophaaldagen tabel for the coming scheduled pickups
-   rdataty = rdata["ophaaldagen"]
-   if type(rdataty) ~= "table" then
-      print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
-      return
-   end
-   rdataty = rdataty["data"]
-   if type(rdataty) ~= "table" then
-      print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
-      return
-   end
-   -- get the next number of ShowNextEvents
-   dprint("- start looping through this year received data -----------------------------------------------------------")
---~    for i = 1, ShowNextEvents do
    local missingrecords=""
    local txt=""
    local txtcnt = 0
-   for i = 1, #rdataty do
-      record = rdataty[i]
-      if type(record) == "table" then
-         wnameType = record["nameType"]
-         web_afvaltype = record["type"]
-         web_afvaldate = record["date"]
-         -- first match for each Type we save the date to capture the first next dates
-         if afvaltype_cfg[web_afvaltype] == nil then
-            print ('@AFW Error: Afvalsoort not defined in the "afvaltype_cfg" table for found Afvalsoort : ' .. web_afvaltype.."  desc:"..wnameType)
-            missingrecords = missingrecords .. '   ["' .. web_afvaltype..'"]        ={hour=19,min=22,daysbefore=1,reminder=0,text="'..wnameType..'"},\n'
-            afvaltype_cfg[web_afvaltype] = {hour=0,min=0,daysbefore=0,reminder=0,text="dummy"}
-         else
-            -- check whether the first nextdate for this afvaltype is already found to get only one next date per AfvalType
-            if afvaltype_cfg[web_afvaltype].nextdate == nil and txtcnt < ShowNextEvents then
-               -- get the long description from the JSON data
-               dprint("web_afvaltype:"..tostring(web_afvaltype).."   web_afvaldate:"..tostring (web_afvaldate))
-               local stextformat = textformat
-               -- Get days diff
-               stextformat, daysdiffdev = getdaysdiff(web_afvaldate, stextformat)
-               -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
-               if daysdiffdev == nil then
-                  dprint ('Invalid date from web for : ' .. web_afvaltype..'   date:'..web_afvaldate)
-               elseif daysdiffdev >= 0 then
-                  -- Set the nextdate for this afvaltype
-                  afvaltype_cfg[web_afvaltype].nextdate = web_afvaldate
-                  -- fill the text with the next defined number of events
-                  if txtcnt < ShowNextEvents then
-                     stextformat = stextformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
-                     stextformat = stextformat:gsub('sdesc',web_afvaltype)
-                     txt = txt..stextformat.."\r\n"
-                     txtcnt = txtcnt + 1
-                  end
-                  notification(web_afvaltype,web_afvaldate,daysdiffdev)  -- check notification for new found info
-               end
-            end
-         end
-      end
-   end
----= Process next year data when needed at the end of the year  ============================================
-   if txtcnt < ShowNextEvents then
-      -- get the ophaaldagen tabel for next year when needed
-      rdataly = rdata["ophaaldagenNext"]
-      if type(rdataly) ~= "table" then
-         print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
-         return
-      end
-      rdataly = rdataly["data"]
-      if type(rdataly) ~= "table" then
-         print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
-         return
-      end
-      -- get the next number of ShowNextEvents
-      dprint("- start looping through next year received data -----------------------------------------------------------")
-   --~    for i = 1, ShowNextEvents do
-      for i = 1, #rdataly do
-         record = rdataly[i]
+   -- function to process ThisYear and Lastyear JSON data
+   function processdata(ophaaldata)
+      for i = 1, #ophaaldata do
+         record = ophaaldata[i]
          if type(record) == "table" then
             wnameType = record["nameType"]
             web_afvaltype = record["type"]
@@ -326,9 +228,69 @@ function Perform_Update()
          end
       end
    end
-----------------------------------------------------------------------------------------------------
-
-
+   --
+   print('AfvalWijzer module start update (v'..ver..')')
+   dprint('=== web update ================================')
+   local sQuery	= 'curl "https://json.mijnafvalwijzer.nl/?method=postcodecheck&postcode='..Postcode..'&street=&huisnummer='..Huisnummer..'&toevoeging" 2>nul'
+   local handle=assert(io.popen(sQuery))
+   local jresponse = handle:read('*all')
+   handle:close()
+   if ( jresponse == "" ) then
+      print("@AFW Error: Empty result from curl command. Please check whether curl.exe is installed.")
+      return
+   end
+   if ( jresponse:sub(1,3) == "NOK" ) then
+      print("@AFW Error: Check your Postcode and Huisnummer as we get an NOK response.")
+      return
+   end
+   -- strip bulk data from "ophaaldagenNext" till the end, because this is causing some errors for some gemeentes
+   if ( jresponse:find('ophaaldagenNext')  == nil ) then
+      print("@AFW Error: returned information does not contain the ophaaldagenNext section. stopping process.")
+      return
+   end
+   jresponse=jresponse:match('(.-),\"mededelingen\":')
+   jresponse=jresponse.."}}"
+   --
+   -- Decode JSON table
+   decoded_response = JSON:decode(jresponse)
+   rdata = decoded_response["data"]
+   if type(rdata) ~= "table" then
+      print("@AFW: Empty data table in JSON data...  stopping execution.")
+      return
+   end
+   -- get the description records into rdesc to retrieve the long description
+   rdesc = rdata["langs"]
+   rdesc = rdesc["data"]
+   -- get the ophaaldagen tabel for the coming scheduled pickups for this year
+   rdataty = rdata["ophaaldagen"]
+   if type(rdataty) ~= "table" then
+      print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
+      return
+   end
+   rdataty = rdataty["data"]
+   if type(rdataty) ~= "table" then
+      print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
+      return
+   end
+   dprint("- start looping through this year received data -----------------------------------------------------------")
+   processdata(rdataty)
+   -- only process nextyear data in case we do not have the requested number of next events
+   if txtcnt < ShowNextEvents then
+      -- get the ophaaldagen tabel for next year when needed
+      rdataly = rdata["ophaaldagenNext"]
+      if type(rdataly) ~= "table" then
+         print("@AFW: Empty data.ophaaldagen table in JSON data...  stopping execution.")
+      else
+         rdataly = rdataly["data"]
+         if type(rdataly) ~= "table" then
+            print("@AFW: Empty data.ophaaldagen.data table in JSON data...  stopping execution.")
+         else
+            -- get the next number of ShowNextEvents
+            dprint("- start looping through next year received data -----------------------------------------------------------")
+            processdata(rdataly)
+         end
+      end
+   end
    dprint("-End   --------------------------------------------------------------------------------------------")
    if missingrecords ~= "" then
       print('#### -- start -- Add these records to local afvaltype_cfg = {')
