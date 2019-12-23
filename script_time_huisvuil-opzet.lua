@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- huisvuilkalender script: script_time_opzet.lua used for gemeentes using  http://www.opzet.nl/afvalkalender_digitaal
 ----------------------------------------------------------------------------------------------------------------
-ver="20190605-1340"
+ver="20191223-1840"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -75,7 +75,7 @@ function os.capture(cmd, rep)  -- execute command to get site
    return s
 end
 -- get days between today and provided date
-function getdaysdiff(i_afvaltype_date)
+function getdaysdiff(i_afvaltype_date, prev_daysdiff)
    local curTime = os.time{day=timenow.day,month=timenow.month,year=timenow.year}
    -- Calculate the daysdifference between found date and Now and send notification is required
    local afvalyear =timenow.year
@@ -98,11 +98,17 @@ function getdaysdiff(i_afvaltype_date)
          return 0
       end
    end
+   local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
+   daysdiff = Round(os.difftime(afvalTime, curTime)/86400,0)       -- 1 day = 86400 seconds
+   if prev_daysdiff > daysdiff then
+      afvalyear = afvalyear+1
+      afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
+      daysdiff = Round(os.difftime(afvalTime, curTime)/86400,0)
+   end
    dprint("...gerd-> afvalyear:"..tostring(afvalyear).."  s_afvalmonth:"..tostring(s_afvalmonth).."  afvalmonth:"..tostring(afvalmonth).."  afvalday:"..tostring(afvalday))
    --
-   local afvalTime = os.time{day=afvalday,month=afvalmonth,year=afvalyear}
    -- return number of days diff
-   return Round(os.difftime(afvalTime, curTime)/86400,0)   -- 1 day = 86400 seconds
+   return daysdiff
 end
 
 function notification(s_afvaltype,s_afvaltype_date,i_daysdifference)
@@ -174,13 +180,15 @@ function Perform_Update()
    local missingrecords = ""
    local txt = ""
    local cnt = 0
+   local prev_daysdiff = -250
 
 --   Loop through all dates
    for web_afvaltype, web_afvaldate in string.gmatch(tmp, 'title="Naar afvalstroom (.-)">.-class="date">(.-)</i>') do
       if web_afvaltype~= nil and web_afvaldate ~= nil then
          -- first match for each Type we save the date to capture the first next dates
-         dprint(web_afvaltype,web_afvaldate)
-         daysdiffdev = getdaysdiff(web_afvaldate)
+         dprint(web_afvaltype .. " " .. web_afvaldate)
+         daysdiffdev = getdaysdiff(web_afvaldate,prev_daysdiff)
+         prev_daysdiff = daysdiffdev
          -- When days is 0 or greater the date is today or in the future. Ignore any date in the past
          if daysdiffdev >= 0 then
             -- fill the text with the next defined number of events
