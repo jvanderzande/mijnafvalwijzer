@@ -240,6 +240,9 @@ timenow = os.date("*t")
 dprint('Opzet Afval module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
+   if afvaltype_cfg[avtype].reminder = nil then
+      afvaltype_cfg[avtype].reminder = 0
+   end
    dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
    if (timenow.hour==afvaltype_cfg[avtype].hour
    or  timenow.hour==afvaltype_cfg[avtype].hour+afvaltype_cfg[avtype].reminder)
