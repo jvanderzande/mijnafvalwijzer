@@ -325,7 +325,7 @@ timenow = os.date("*t")
 dprint('AfvalWijzer module start check')
 local needupdate = false
 for avtype,get in pairs(afvaltype_cfg) do
-   if afvaltype_cfg[avtype].reminder = nil then
+   if afvaltype_cfg[avtype].reminder == nil then
       afvaltype_cfg[avtype].reminder = 0
    end
    dprint("afvaltype_cfg :"..tostring(avtype)..";"..tostring(afvaltype_cfg[avtype].hour)..";"..tostring(afvaltype_cfg[avtype].min))
