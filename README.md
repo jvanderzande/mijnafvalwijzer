@@ -23,6 +23,9 @@ This script is for the site deafvalapp.nl for the gemeentes Bergeijk, Bladel, Bo
 Echt-Susteren, Eersel, Geldermalsen, Grave,Helmond, Lingewaal, Maasdriel, Mill en Sint Hubert, Neder-BetuweNeerijnen,
 Oirschot, Reusel-De Mierden, Sint Anthonis, Someren, Son en Breugel, Terneuzen, Tiel, West Maas en Waal, Zaltbommel.
 
+# huisvuil-ophaalkalender-be
+This script is for the site www.ophaalkalender.be for the gemeentes supported by https://www.fostplus.be
+
 # Obsolete:
 <b>huisvuil-purmerend</b>
 (Please use script_time_huisvuil_opzet.lua going forward)
