@@ -32,7 +32,7 @@ local notificationtext  = '@DAG@ wordt de @AFVALTEXT@ opgehaald!'
 -- Switch on Debugging in case of issues => set to true/false=======
 local debug = false  -- get debug info in domoticz console/log
 
--- define a line for each afvaltype_cfg retuned by the webrequest:
+-- define a line for each afvaltype_cfg returned by the webrequest:
    -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
    -- daysbefore ==> 0 means that the notification is send on the day of the planned garbage collection
    -- daysbefore ==> X means that the notification is send X day(s) before the day of the planned garbage collection

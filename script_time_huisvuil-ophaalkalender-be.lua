@@ -39,7 +39,7 @@ domoticzjsonpath = '/home/pi/domoticz/scripts/lua' -- Directory containing the D
 --    desc = afvaltype
 textformat = "dd mmm yy desc"
 
--- ### define a line for each afvaltype_cfg retuned by the webrequest:
+-- ### define a line for each afvaltype_cfg returned by the webrequest:
    -- hour & min ==> the time the check needs to be performed and notification send when daysbefore is true
    -- daysbefore ==> 0 means that the notification is send on the day of the planned garbage collection
    -- daysbefore ==> X means that the notification is send X day(s) before the day of the planned garbage collection
