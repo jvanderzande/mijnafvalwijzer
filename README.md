@@ -8,9 +8,10 @@ by zicht @ http://www.domoticz.com/forum/viewtopic.php?t=17963
 script version by nf999 @ http://www.domoticz.com/forum/viewtopic.php?f=61&t=17963&p=174908#p169637
 
 # huisvuil-opzet
-This script is a generic script for all gemeentes that use the service of opzet.nl.
+The <b>script_time_huisvuil-opzet.lua</b> script is a generic screen scraping script for all gemeentes that use the service of OPZET.NL.
 This makes the separate scripts for Pumerend, Zuidwest Friesland and mijnblink (for the gemeentes: Laarbeek, Deurne, Gemert-Bakel, Heeze-Leende, Someren, Asten en Nuenen) obsolete as they are supported by this script. check their website for supported gemeentes: http://www.opzet.nl/afvalkalender_digitaal
-or check the afvalkalender of your gemeente and check whether it refers at the bottom of the page to "Ontwerp & techniek: Opzet".
+or check the afvalkalender of your gemeente and check whether it refers at the bottom of the page to "Ontwerp & techniek: Opzet".<br>
+The <b>script_time_huisvuil-opzet_json.lua</b> script is created for those gemeentes that use OPZET but do not support the screenscraping (script_time_huisvuil-opzet.lua) version. This version will perform 3 API call and will save the result of 2 of these call into cachefiles “opzet-afvalstromen.txt” & “Opzet-bagid.txt”.
 
 # huisvuil-westland
 This script is for the site huisvuilkalender.gemeentewestland.nl for the gemeente Westland.
@@ -25,6 +26,9 @@ Oirschot, Reusel-De Mierden, Sint Anthonis, Someren, Son en Breugel, Terneuzen, 
 
 # huisvuil-ophaalkalender-be
 This script is for the site www.ophaalkalender.be for the gemeentes supported by https://www.fostplus.be
+
+# script_time_huisvuil-goeree-overflakkee
+This script is for the site https://webadapter.watsoftware.nl for the gemeente Goeree-Overflakkee.
 
 # Obsolete:
 <b>huisvuil-purmerend</b>

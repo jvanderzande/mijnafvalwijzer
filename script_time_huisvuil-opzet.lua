@@ -15,8 +15,7 @@ ShowNextEvents = 3                  -- indicate the next x events to show in the
 Postcode = ''                       -- Postcode
 Housenr = ''                        -- Huisnummer zonder toevoeging
 Housenrtoev=''                      -- Huisnummer toevoeging
-NotificationEmailAdress = ""        -- Specify your Email Address for the notifications. Leave empty to skip email notification
---NotificationEmailAdress = {"",""} -- Specify multiple Email Addresses for the notifications. Leave empty to skip email notification
+NotificationEmailAdress = {"",""}   -- Specify multiple Email Addresses for the notifications. Leave empty to skip email notification
 Notificationsystem = ""             -- Specify notification system eg "telegram/pushover/.." leave empty to skip
 
 -- Switch on Debugging in case of issues => set to true/false=======
