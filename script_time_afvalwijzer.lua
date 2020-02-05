@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------
 -- MijnAfvalWijzer huisvuil script: script_time_afvalwijzer.lua
 ----------------------------------------------------------------------------------------------------------------
-ver="20191221-2300"
+ver="20200205-16:10"
 -- curl in os required!!
 -- create dummy text device from dummy hardware with the name defined for: myAfvalDevice
 -- Check the timing when to get a notification for each Afvaltype in the afvaltype_cfg table
@@ -31,6 +31,7 @@ debug = false
    -- Afvaltype description options
    --    sdesc = short afvaltype description from Website  eg pmd
    --    ldesc = Long afvaltype description from Website   eg Plastic, Metalen en Drankkartons
+   --    tdesc = Use the description available in the table text field
 textformat = "dd mmm yy ldesc"
 
 -- ### define a line for each afvaltype_cfg returned by the webrequest:
@@ -218,6 +219,7 @@ function Perform_Update()
                      if txtcnt < ShowNextEvents then
                         stextformat = stextformat:gsub('ldesc',rdesc[web_afvaltype:upper().."_L"])
                         stextformat = stextformat:gsub('sdesc',web_afvaltype)
+                        stextformat = stextformat:gsub('tdesc', afvaltype_cfg[web_afvaltype].text)
                         txt = txt..stextformat.."\r\n"
                         txtcnt = txtcnt + 1
                      end
