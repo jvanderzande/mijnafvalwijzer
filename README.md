@@ -1,3 +1,10 @@
+#There is total new rewrite of these scripts available in this repository: https://github.com/jvanderzande/GarbageCalendar
+#This repository will not be maintained any further.
+
+
+
+
+
 These Domoticz time scripts will retrieve the next garbage collection for your home address and update a TEXT device in Domoticz for the available regions/gemeentes.<br>
 It will also send you a notification at the specified time 0-x days before the event.
 
