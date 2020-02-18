@@ -1,5 +1,5 @@
 ## There is total new rewrite of these scripts available in this repository: https://github.com/jvanderzande/GarbageCalendar
-## This repository will not be maintained any further.
+## This repository will not be maintained any further!
 
 ===============================================================================
 
